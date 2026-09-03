@@ -90,12 +90,51 @@ jobs:
           cat server-smoke.log
           exit 1
 
-      - name: Upload server smoke log
+      - name: Client launch smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > client-smoke.log
+          xvfb-run -a timeout 120s gradle runClient --no-daemon > client-smoke.log 2>&1 &
+          PID=$!
+
+          for i in $(seq 1 120); do
+            if grep -Eq 'Setting user:|Backend library: LWJGL|OpenAL initialized|Reloading ResourceManager' client-smoke.log; then
+              echo 'Minecraft client reached runtime initialization.'
+              kill "$PID" 2>/dev/null || true
+              wait "$PID" 2>/dev/null || true
+              exit 0
+            fi
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Failed to load mod|ModLoadingException|Caused by:.*happy_ghast_overhaul' client-smoke.log; then
+              echo 'Client smoke detected a fatal mod/runtime error.'
+              cat client-smoke.log
+              kill "$PID" 2>/dev/null || true
+              wait "$PID" 2>/dev/null || true
+              exit 1
+            fi
+            if ! kill -0 "$PID" 2>/dev/null; then
+              wait "$PID" || RC=$?
+              echo "Client exited before runtime-ready marker (rc=${RC:-0})."
+              cat client-smoke.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo 'Client did not reach runtime-ready marker in time.'
+          cat client-smoke.log
+          kill "$PID" 2>/dev/null || true
+          wait "$PID" 2>/dev/null || true
+          exit 1
+
+      - name: Upload smoke logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: server-smoke-log
-          path: server-smoke.log
+          name: smoke-logs
+          path: |
+            server-smoke.log
+            client-smoke.log
           if-no-files-found: ignore
 
       - name: Upload JAR
