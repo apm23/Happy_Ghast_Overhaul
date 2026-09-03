@@ -58,6 +58,12 @@ jobs:
           set -euo pipefail
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
+          cat > run/server.properties <<'EOF'
+          online-mode=false
+          server-port=25565
+          level-name=world
+          spawn-protection=0
+          EOF
           : > server-smoke.log
           gradle runServer --no-daemon > server-smoke.log 2>&1 &
           PID=$!
