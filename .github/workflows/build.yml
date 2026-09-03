@@ -30,6 +30,68 @@ jobs:
       - name: Build
         run: gradle build --stacktrace
 
+      - name: Verify packaged JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' | head -n 1)"
+          test -n "$JAR"
+          required=(
+            'META-INF/neoforge.mods.toml'
+            'happy_ghast_overhaul.mixins.json'
+            'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class'
+            'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class'
+            'com/apm23/happyghastoverhaul/mixin/HappyGhastSpeedMixin.class'
+            'data/happy_ghast_overhaul/recipe/military_harness.json'
+            'data/minecraft/tags/item/harnesses.json'
+            'assets/happy_ghast_overhaul/equipment/military_harness.json'
+            'assets/happy_ghast_overhaul/items/military_harness.json'
+          )
+          jar tf "$JAR" > jar-contents.txt
+          for path in "${required[@]}"; do
+            grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
+          done
+
+      - name: Dedicated server smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+          : > server-smoke.log
+          gradle runServer --no-daemon > server-smoke.log 2>&1 &
+          PID=$!
+          cleanup() {
+            kill "$PID" 2>/dev/null || true
+            wait "$PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 120); do
+            if grep -Eq 'Done \([0-9.]+s\)!|Done \(' server-smoke.log; then
+              echo 'Dedicated server reached ready state.'
+              exit 0
+            fi
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo 'Dedicated server exited before ready state.'
+              cat server-smoke.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo 'Dedicated server did not reach ready state in time.'
+          cat server-smoke.log
+          exit 1
+
+      - name: Upload server smoke log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-smoke-log
+          path: server-smoke.log
+          if-no-files-found: ignore
+
       - name: Upload JAR
         if: success()
         uses: actions/upload-artifact@v4
