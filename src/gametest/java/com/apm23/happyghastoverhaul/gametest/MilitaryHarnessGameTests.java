@@ -19,10 +19,12 @@ import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import java.util.List;
@@ -155,25 +157,25 @@ public final class MilitaryHarnessGameTests {
                     before + ghast.getMaxHealth() * MilitaryHarnessEffects.SNOWBALL_HEAL_FRACTION
             );
 
-            Vec3 center = ghast.getBoundingBox().getCenter();
             Snowball snowball = new Snowball(
                     level,
-                    ghast.getBoundingBox().minX - 1.0D,
-                    center.y,
-                    center.z,
+                    ghast.getX(),
+                    ghast.getY(),
+                    ghast.getZ(),
                     Items.SNOWBALL.getDefaultInstance()
             );
-            snowball.setNoGravity(true);
-            snowball.setDeltaMovement(1.5D, 0.0D, 0.0D);
             level.addFreshEntity(snowball);
 
-            helper.runAfterDelay(10, () -> {
-                helper.assertTrue(!snowball.isAlive(),
-                        "Snowball did not collide with/consume on the Happy Ghast");
-                assertNear(helper, ghast.getHealth(), expected,
-                        "One snowball must heal exactly 50% of actual max health");
-                helper.succeed();
-            });
+            ProjectileImpactEvent impact = new ProjectileImpactEvent(snowball, new EntityHitResult(ghast));
+            NeoForge.EVENT_BUS.post(impact);
+
+            helper.assertTrue(impact.isCanceled(),
+                    "Military Harness snowball impact must cancel vanilla impact handling");
+            helper.assertTrue(!snowball.isAlive(),
+                    "Military Harness snowball impact must consume the snowball");
+            assertNear(helper, ghast.getHealth(), expected,
+                    "One snowball must heal exactly 50% of actual max health");
+            helper.succeed();
         });
     }
 
