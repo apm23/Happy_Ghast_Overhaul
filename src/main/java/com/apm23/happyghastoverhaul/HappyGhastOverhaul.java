@@ -20,7 +20,7 @@ public final class HappyGhastOverhaul {
     public static final DeferredItem<MilitaryHarnessItem> MILITARY_HARNESS = ITEMS.registerItem(
             "military_harness",
             MilitaryHarnessItem::new,
-            MilitaryHarnessItem.properties()
+            MilitaryHarnessItem::properties
     );
 
     public HappyGhastOverhaul(IEventBus modEventBus, ModContainer modContainer) {
