@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.apm23.happyghastoverhaul.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "HappyGhastSpeedMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
