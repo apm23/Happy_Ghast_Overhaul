@@ -12,20 +12,37 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
 neoForge {
     version = project.neo_version
 
     runs {
+        configureEach {
+            systemProperty('neoforge.enabledGameTestNamespaces', mod_id)
+        }
         client { client() }
         server {
             server()
             programArgument '--nogui'
+        }
+        gameTests {
+            type = 'gameTestServer'
+            gameDirectory = file('run-gametests')
         }
     }
 
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
+        }
+        "${mod_id}_gametest" {
+            sourceSet(sourceSets.gametest)
         }
     }
 }
