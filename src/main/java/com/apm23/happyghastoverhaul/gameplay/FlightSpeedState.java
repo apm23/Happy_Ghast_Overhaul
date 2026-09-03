@@ -15,6 +15,10 @@ public final class FlightSpeedState {
         return MULTIPLIERS[level - 1];
     }
 
+    public static float scale(float vanillaTravelConstant) {
+        return vanillaTravelConstant * (float) multiplier();
+    }
+
     public static void cycle() {
         level = level == 4 ? 1 : level + 1;
     }
