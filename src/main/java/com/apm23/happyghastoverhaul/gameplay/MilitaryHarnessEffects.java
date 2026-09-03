@@ -14,8 +14,8 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class MilitaryHarnessEffects {
     public static final double BONUS_MAX_HEALTH = 250.0D;
@@ -38,22 +38,28 @@ public final class MilitaryHarnessEffects {
     }
 
     @SubscribeEvent
-    public void onEntityTick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof HappyGhast ghast) || ghast.level().isClientSide()) {
+    public void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (!(event.getEntity() instanceof HappyGhast ghast)
+                || event.getSlot() != EquipmentSlot.BODY
+                || ghast.level().isClientSide()) {
             return;
         }
 
+        boolean nowMilitary = event.getTo().getItem() == HappyGhastOverhaul.MILITARY_HARNESS.get();
+        syncMaxHealthModifier(ghast, nowMilitary);
+    }
+
+    private static void syncMaxHealthModifier(HappyGhast ghast, boolean equipped) {
         AttributeInstance maxHealth = ghast.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth == null) {
             return;
         }
 
-        boolean equipped = isMilitaryHarnessEquipped(ghast);
         boolean modifierPresent = maxHealth.hasModifier(MAX_HEALTH_MODIFIER_ID);
-
         if (equipped && !modifierPresent) {
+            float oldHealth = ghast.getHealth();
             maxHealth.addTransientModifier(MAX_HEALTH_MODIFIER);
-            ghast.setHealth(Math.min(ghast.getMaxHealth(), ghast.getHealth() + (float) BONUS_MAX_HEALTH));
+            ghast.setHealth(Math.min(ghast.getMaxHealth(), oldHealth + (float) BONUS_MAX_HEALTH));
         } else if (!equipped && modifierPresent) {
             maxHealth.removeModifier(MAX_HEALTH_MODIFIER_ID);
             ghast.setHealth(Math.min(ghast.getHealth(), ghast.getMaxHealth()));
