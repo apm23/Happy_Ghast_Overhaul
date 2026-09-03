@@ -10,13 +10,17 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class MilitaryHarnessEffects {
     public static final double BONUS_MAX_HEALTH = 250.0D;
     public static final float PROTECTED_DAMAGE_MULTIPLIER = 0.10F;
+    public static final float SNOWBALL_HEAL_FRACTION = 0.50F;
 
     private static final Identifier MAX_HEALTH_MODIFIER_ID = Identifier.fromNamespaceAndPath(
             HappyGhastOverhaul.MOD_ID,
@@ -81,5 +85,23 @@ public final class MilitaryHarnessEffects {
         if (projectile || explosion || melee) {
             event.setAmount(event.getAmount() * PROTECTED_DAMAGE_MULTIPLIER);
         }
+    }
+
+    @SubscribeEvent
+    public void onProjectileImpact(ProjectileImpactEvent event) {
+        if (!(event.getProjectile() instanceof Snowball snowball)
+                || snowball.level().isClientSide()
+                || !(event.getRayTraceResult() instanceof EntityHitResult hit)
+                || !(hit.getEntity() instanceof HappyGhast ghast)
+                || !isMilitaryHarnessEquipped(ghast)) {
+            return;
+        }
+
+        ghast.heal(ghast.getMaxHealth() * SNOWBALL_HEAL_FRACTION);
+
+        // Consume the snowball ourselves and skip vanilla impact handling so this
+        // special heal cannot also damage or trigger a second Happy Ghast effect.
+        snowball.discard();
+        event.setCanceled(true);
     }
 }
