@@ -51,6 +51,17 @@ jobs:
           for path in "${required[@]}"; do
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
           done
+          if jar tf "$JAR" | grep -q '/gametest/'; then
+            echo 'GameTest classes leaked into production JAR.'
+            exit 1
+          fi
+
+      - name: Functional Military Harness GameTests
+        shell: bash
+        run: |
+          set -o pipefail
+          rm -rf run-gametests
+          gradle runGameTests --no-daemon --stacktrace 2>&1 | tee functional-gametest.log
 
       - name: Dedicated server smoke
         shell: bash
@@ -133,6 +144,7 @@ jobs:
         with:
           name: smoke-logs
           path: |
+            functional-gametest.log
             server-smoke.log
             client-smoke.log
           if-no-files-found: ignore
