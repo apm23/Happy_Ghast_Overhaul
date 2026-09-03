@@ -1,7 +1,7 @@
 package com.apm23.happyghastoverhaul;
 
+import com.apm23.happyghastoverhaul.item.MilitaryHarnessItem;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -15,9 +15,10 @@ public final class HappyGhastOverhaul {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
 
-    public static final DeferredItem<Item> MILITARY_HARNESS = ITEMS.registerSimpleItem(
+    public static final DeferredItem<MilitaryHarnessItem> MILITARY_HARNESS = ITEMS.registerItem(
             "military_harness",
-            properties -> properties.stacksTo(1)
+            MilitaryHarnessItem::new,
+            MilitaryHarnessItem.properties()
     );
 
     public HappyGhastOverhaul(IEventBus modEventBus, ModContainer modContainer) {
