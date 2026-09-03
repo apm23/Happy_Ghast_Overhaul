@@ -35,6 +35,7 @@ public final class MilitaryHarnessGameTests {
     public static final String TEST_MOD_ID = "happy_ghast_overhaul_gametest";
     private static final String TEST_NAMESPACE = HappyGhastOverhaul.MOD_ID;
     private static final double EPSILON = 0.01D;
+    private static final float VANILLA_TRAVEL_CONSTANT = 5.0F;
 
     private record Smoke(String name, int maxTicks, Consumer<GameTestHelper> body) {
     }
@@ -223,6 +224,9 @@ public final class MilitaryHarnessGameTests {
                 "Expected speed Lv" + expectedLevel + " but got Lv" + FlightSpeedState.level());
         assertNear(helper, FlightSpeedState.multiplier(), expectedMultiplier,
                 "Wrong multiplier for speed Lv" + expectedLevel);
+        assertNear(helper, FlightSpeedState.scale(VANILLA_TRAVEL_CONSTANT),
+                VANILLA_TRAVEL_CONSTANT * expectedMultiplier,
+                "Wrong travel speed constant for speed Lv" + expectedLevel);
     }
 
     private static void assertNear(GameTestHelper helper, double actual, double expected, String message) {
