@@ -1,10 +1,12 @@
 package com.apm23.happyghastoverhaul;
 
+import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
 import com.apm23.happyghastoverhaul.item.MilitaryHarnessItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -24,6 +26,7 @@ public final class HappyGhastOverhaul {
     public HappyGhastOverhaul(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
         modEventBus.addListener(this::addCreativeTabEntries);
+        NeoForge.EVENT_BUS.register(new MilitaryHarnessEffects());
     }
 
     private void addCreativeTabEntries(BuildCreativeModeTabContentsEvent event) {
