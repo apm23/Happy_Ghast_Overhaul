@@ -8,6 +8,9 @@ description='''
 Adds the Military Harness upgrade for Happy Ghasts.
 '''
 
+[[mixins]]
+config="happy_ghast_overhaul.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
