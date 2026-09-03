@@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
@@ -120,7 +120,7 @@ public final class MilitaryHarnessGameTests {
             assertNear(helper, beforeMelee - melee.getHealth(), expectedLoss,
                     "Melee damage was not reduced by 90%");
 
-            AbstractArrow arrow = EntityType.ARROW.create(level, EntitySpawnReason.COMMAND);
+            AbstractArrow arrow = EntityTypes.ARROW.create(level, EntitySpawnReason.COMMAND);
             helper.assertTrue(arrow != null, "Could not construct an arrow damage source");
             float beforeProjectile = projectile.getHealth();
             projectile.hurtServer(level, level.damageSources().arrow(arrow, player), incoming);
@@ -199,7 +199,7 @@ public final class MilitaryHarnessGameTests {
 
     private static HappyGhast spawnGhast(GameTestHelper helper, BlockPos relativePos) {
         ServerLevel level = helper.getLevel();
-        HappyGhast ghast = EntityType.HAPPY_GHAST.create(level, EntitySpawnReason.COMMAND);
+        HappyGhast ghast = EntityTypes.HAPPY_GHAST.create(level, EntitySpawnReason.COMMAND);
         helper.assertTrue(ghast != null, "Could not create Happy Ghast");
         ghast.setBaby(false);
         ghast.setNoAi(true);
