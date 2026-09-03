@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "D": "minecraft:diamond",
+    "H": "#happy_ghast_overhaul:vanilla_harnesses"
+  },
+  "pattern": [
+    " D ",
+    "DHD",
+    " D "
+  ],
+  "result": {
+    "id": "happy_ghast_overhaul:military_harness"
+  }
+}
