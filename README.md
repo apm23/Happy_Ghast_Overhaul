@@ -1,37 +1,47 @@
 # Happy Ghast Overhaul
 
-Minecraft Java 26.2 NeoForge mod focused entirely on a custom upgraded Happy Ghast harness.
+Minecraft Java 26.2 NeoForge mod focused exclusively on the **Military Harness** upgrade for Happy Ghasts.
 
-## Design rule
+## Core rule
 
-Vanilla Happy Ghasts must remain completely vanilla when the custom harness is not equipped. The mod must not globally change Happy Ghast health, normal flight speed, durability, healing, or damage behavior.
+Happy Ghasts without the Military Harness remain 100% vanilla. The mod does not globally change their health, speed, damage handling, or healing.
 
-## Planned gameplay
+## Military Harness
 
-- Happy Ghast without the custom harness: fully vanilla behavior and stats.
-- Custom Diamond Harness recipe: vanilla Harness in the center, Diamonds above/below/left/right.
-- Equipping the Custom Diamond Harness applies all upgrades.
-- Custom Harness bonus max health: +250 HP above the Happy Ghast's vanilla max health.
-- Removing/replacing the Custom Harness removes its bonus max health and all other custom effects safely.
-- Normal ridden flight speed with the Custom Harness: vanilla speed (no passive speed increase).
-- Custom Harness resistance: 90% reduction to melee, projectile, and explosion damage.
-- Custom Harness immunity to fire and lava.
-- While the Custom Harness is equipped, snowball healing uses current actual max health: each snowball heals 50% of that max health.
-- Custom Harness staged boost controlled from the client:
-  - normal: 1.0x vanilla ridden speed
-  - Ctrl press 1: 1.5x
-  - Ctrl press 2: 2.0x
-  - Ctrl press 3: 3.0x
-  - Ctrl press 4: back to 1.0x
-- Small action-bar speed indicator; no chat spam.
-- Void/admin kill-style damage should not be blocked.
+- Display name: `Military Harness`
+- Internal id: `military_harness`
+- Recipe: vanilla Harness in the center with Diamonds above, below, left, and right.
+- All bonuses below are active only while the Military Harness is equipped.
+- Removing/replacing the Military Harness removes its bonuses cleanly.
 
-## Effective health target
+### Durability
 
-If the vanilla Happy Ghast max health is 100 HP in the target Minecraft version, equipping the Custom Diamond Harness results in 350 HP total. The implementation should apply a +250 HP modifier rather than hardcoding total health, so the harness remains compatible with another mod or future vanilla change that alters Happy Ghast base max health.
+- +250 max health as an attribute modifier on top of the Happy Ghast's actual base/current max-health system; do not hardcode a final total HP.
+- 90% damage reduction against melee damage.
+- 90% damage reduction against projectile damage.
+- 90% damage reduction against explosion damage.
+- Complete immunity to fire and lava damage.
+- Do not protect against void/admin kill-style damage.
+
+### Snowball healing
+
+- Military Harness only: each valid snowball heal restores 50% of the Happy Ghast's actual current maximum health.
+- Healing is capped at current maximum health.
+- Do not hardcode the heal amount, so other compatible max-health changes remain respected.
+- Without Military Harness, retain vanilla snowball behavior unchanged.
+
+### Flight speed levels
+
+Military Harness provides exactly four speed levels, cycled with Left Ctrl:
+
+- Lv1: 1.0x vanilla speed
+- Lv2: 1.5x vanilla speed
+- Lv3: 2.0x vanilla speed
+- Lv4: 3.0x vanilla speed
+- Next Left Ctrl press cycles Lv4 back to Lv1.
+
+Lv1 is the normal/vanilla speed; there is no separate `Normal` state. Speed modification must only apply while riding a Happy Ghast equipped with Military Harness. Show a small action-bar speed-level indicator without chat spam.
 
 ## Architecture
 
-One JAR with server-authoritative harness detection, max-health modifier, damage resistance, immunity, and snowball healing. A small client component handles Ctrl boost input and ridden movement adjustment. All custom gameplay behavior must be gated behind the Custom Diamond Harness being equipped.
-
-Target loader: NeoForge, Minecraft Java 26.2.
+One NeoForge JAR for Minecraft Java 26.2. Health, damage protection, fire/lava immunity, harness state, and snowball healing should be server-authoritative. A small client component may capture Left Ctrl and communicate the requested speed-level change to the server. Avoid global Happy Ghast patches wherever a harness-gated implementation is possible.
