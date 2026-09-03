@@ -1,3 +1,6 @@
 {
-  "item.happy_ghast_overhaul.military_harness": "Military Harness"
+  "item.happy_ghast_overhaul.military_harness": "Military Harness",
+  "key.happy_ghast_overhaul.cycle_speed": "Cycle Military Harness Speed",
+  "key.category.happy_ghast_overhaul.controls": "Happy Ghast Overhaul",
+  "message.happy_ghast_overhaul.speed_level": "Military Harness - Speed Lv.%s (%sx)"
 }
