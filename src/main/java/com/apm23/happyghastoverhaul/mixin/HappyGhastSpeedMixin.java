@@ -8,7 +8,6 @@ import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
@@ -35,6 +34,6 @@ public abstract class HappyGhastSpeedMixin extends Animal {
             return vanillaConstant;
         }
 
-        return vanillaConstant * (float) FlightSpeedState.multiplier();
+        return FlightSpeedState.scale(vanillaConstant);
     }
 }
