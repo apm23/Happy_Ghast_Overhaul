@@ -49,13 +49,13 @@ public final class MilitaryHarnessClient {
         while (CYCLE_SPEED.consumeClick()) {
             if (validPilot) {
                 FlightSpeedState.cycle();
-                minecraft.player.displayClientMessage(
+                minecraft.gui.hud.setOverlayMessage(
                         Component.translatable(
                                 "message.happy_ghast_overhaul.speed_level",
                                 FlightSpeedState.level(),
                                 formatMultiplier(FlightSpeedState.multiplier())
                         ),
-                        true
+                        false
                 );
             }
         }
