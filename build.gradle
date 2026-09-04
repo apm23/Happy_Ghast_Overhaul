@@ -35,7 +35,7 @@ def generatedMilitaryHarnessResources = layout.buildDirectory.dir('generated/mil
 
 sourceSets.main.resources.srcDir(generatedMilitaryHarnessResources)
 
-tasks.register('generateMilitaryHarnessTextures') {
+def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTextures') {
     inputs.dir('src/main/resources/assets/happy_ghast_overhaul/texture_sources')
     outputs.dir(generatedMilitaryHarnessResources)
 
@@ -55,12 +55,16 @@ tasks.register('generateMilitaryHarnessTextures') {
 }
 
 processResources {
-    dependsOn tasks.named('generateMilitaryHarnessTextures')
+    dependsOn generateMilitaryHarnessTextures
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }
     exclude 'assets/happy_ghast_overhaul/texture_sources/**'
+}
+
+tasks.named('sourcesJar') {
+    dependsOn generateMilitaryHarnessTextures
 }
 
 tasks.withType(JavaCompile).configureEach {
