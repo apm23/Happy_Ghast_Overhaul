@@ -2,11 +2,11 @@ package com.apm23.happyghastoverhaul.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
+import net.minecraft.client.model.animal.ghast.HappyGhastModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.client.renderer.entity.layers.RenderLayerParent;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
-import net.minecraft.client.model.HappyGhastModel;
 import net.minecraft.resources.Identifier;
 
 /** Client render layer for the protruding Military Harness geometry. */
