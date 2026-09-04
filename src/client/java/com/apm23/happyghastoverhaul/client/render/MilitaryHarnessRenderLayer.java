@@ -9,50 +9,24 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
 import net.minecraft.resources.Identifier;
 
-/** Client render layer for the protruding Military Harness geometry. */
-public final class MilitaryHarnessRenderLayer
-        extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
-
-    // Geometry is now validated on 26.2. Keep the vanilla-backed atlas while the dedicated
-    // 128x128 Military Harness texture is authored; tint establishes the locked black-metal base.
-    private static final Identifier VALIDATION_TEXTURE = Identifier.withDefaultNamespace(
-            "textures/entity/happy_ghast/happy_ghast.png"
-    );
-
-    private static final int BLACK_METAL = 0xFF17191F;
-
+/** Shared 3D geometry, faction-selected palette. */
+public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
+    private static final Identifier VALIDATION_TEXTURE = Identifier.withDefaultNamespace("textures/entity/happy_ghast/happy_ghast.png");
+    private static final int SENTINEL_BLUE = 0xFF182B43;
+    private static final int REAPER_RED = 0xFF42191D;
     private final MilitaryHarnessVisualModel model;
 
-    public MilitaryHarnessRenderLayer(
-            RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent,
-            MilitaryHarnessVisualModel model
-    ) {
+    public MilitaryHarnessRenderLayer(RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent, MilitaryHarnessVisualModel model) {
         super(parent);
         this.model = model;
     }
 
     @Override
-    public void submit(
-            PoseStack poseStack,
-            SubmitNodeCollector collector,
-            int packedLight,
-            HappyGhastRenderState state,
-            float yRot,
-            float xRot
-    ) {
-        if (!((FabricRenderState) state).getDataOrDefault(MilitaryHarnessRenderData.EQUIPPED, false)) {
-            return;
-        }
-
-        coloredCutoutModelCopyLayerRender(
-                this.model,
-                VALIDATION_TEXTURE,
-                poseStack,
-                collector,
-                packedLight,
-                state,
-                BLACK_METAL,
-                0
-        );
+    public void submit(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, HappyGhastRenderState state, float yRot, float xRot) {
+        FabricRenderState fabricState = (FabricRenderState) state;
+        if (!fabricState.getDataOrDefault(MilitaryHarnessRenderData.EQUIPPED, false)) return;
+        boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
+        coloredCutoutModelCopyLayerRender(this.model, VALIDATION_TEXTURE, poseStack, collector, packedLight, state,
+                reaper ? REAPER_RED : SENTINEL_BLUE, 0);
     }
 }
