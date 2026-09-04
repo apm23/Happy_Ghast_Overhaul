@@ -1,5 +1,6 @@
 package com.apm23.happyghastoverhaul.client.render;
 
+import com.apm23.happyghastoverhaul.HappyGhastOverhaul;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.minecraft.client.model.animal.ghast.HappyGhastModel;
@@ -9,11 +10,23 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
 import net.minecraft.resources.Identifier;
 
-/** Shared 3D geometry, faction-selected palette. */
+/** Shared 3D geometry with dedicated faction textures and amethyst emissive pass. */
 public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
-    private static final Identifier VALIDATION_TEXTURE = Identifier.withDefaultNamespace("textures/entity/happy_ghast/happy_ghast.png");
-    private static final int SENTINEL_BLUE = 0xFF182B43;
-    private static final int REAPER_RED = 0xFF42191D;
+    private static final Identifier SENTINEL_TEXTURE = Identifier.fromNamespaceAndPath(
+            HappyGhastOverhaul.MOD_ID,
+            "textures/entity/military_harness/military_harness_sentinel.png"
+    );
+    private static final Identifier REAPER_TEXTURE = Identifier.fromNamespaceAndPath(
+            HappyGhastOverhaul.MOD_ID,
+            "textures/entity/military_harness/military_harness_reaper.png"
+    );
+    private static final Identifier EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
+            HappyGhastOverhaul.MOD_ID,
+            "textures/entity/military_harness/military_harness_emissive.png"
+    );
+    private static final int WHITE = 0xFFFFFFFF;
+    private static final int FULL_BRIGHT = 0x00F000F0;
+
     private final MilitaryHarnessVisualModel model;
 
     public MilitaryHarnessRenderLayer(RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent, MilitaryHarnessVisualModel model) {
@@ -24,9 +37,34 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
     @Override
     public void submit(PoseStack poseStack, SubmitNodeCollector collector, int packedLight, HappyGhastRenderState state, float yRot, float xRot) {
         FabricRenderState fabricState = (FabricRenderState) state;
-        if (!fabricState.getDataOrDefault(MilitaryHarnessRenderData.EQUIPPED, false)) return;
+        if (!fabricState.getDataOrDefault(MilitaryHarnessRenderData.EQUIPPED, false)) {
+            return;
+        }
+
         boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
-        coloredCutoutModelCopyLayerRender(this.model, VALIDATION_TEXTURE, poseStack, collector, packedLight, state,
-                reaper ? REAPER_RED : SENTINEL_BLUE, 0);
+        Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
+
+        coloredCutoutModelCopyLayerRender(
+                this.model,
+                baseTexture,
+                poseStack,
+                collector,
+                packedLight,
+                state,
+                WHITE,
+                0
+        );
+
+        // Transparent full-bright mask only lights the amethyst crystals / visor accents.
+        coloredCutoutModelCopyLayerRender(
+                this.model,
+                EMISSIVE_TEXTURE,
+                poseStack,
+                collector,
+                FULL_BRIGHT,
+                state,
+                WHITE,
+                0
+        );
     }
 }
