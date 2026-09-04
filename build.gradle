@@ -1,6 +1,6 @@
 plugins {
-    id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.146'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
 }
 
 version = mod_version
@@ -10,62 +10,41 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-
-sourceSets {
-    gametest {
-        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
-        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
-    }
+repositories {
+    mavenCentral()
 }
 
-neoForge {
-    version = project.neo_version
-
-    runs {
-        configureEach {
-            systemProperty('neoforge.enabledGameTestNamespaces', mod_id)
-        }
-        client { client() }
-        server {
-            server()
-            programArgument '--nogui'
-        }
-        gameTests {
-            type = 'gameTestServer'
-            gameDirectory = file('run-gametests')
-        }
-    }
+loom {
+    splitEnvironmentSourceSets()
 
     mods {
         "${mod_id}" {
-            sourceSet(sourceSets.main)
-        }
-        "${mod_id}_gametest" {
-            sourceSet(sourceSets.gametest)
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
         }
     }
 }
 
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [
-        minecraft_version: minecraft_version,
-        minecraft_version_range: minecraft_version_range,
-        neo_version: neo_version,
-        mod_id: mod_id,
-        mod_name: mod_name,
-        mod_license: mod_license,
-        mod_version: mod_version
-    ]
-    inputs.properties replaceProperties
-    expand replaceProperties
-    from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 }
 
-sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
