@@ -1,37 +1,28 @@
 package com.apm23.happyghastoverhaul;
 
-import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
 import com.apm23.happyghastoverhaul.item.MilitaryHarnessItem;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.world.item.Item;
 
-@Mod(HappyGhastOverhaul.MOD_ID)
-public final class HappyGhastOverhaul {
+public final class HappyGhastOverhaul implements ModInitializer {
     public static final String MOD_ID = "happy_ghast_overhaul";
-
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
-
-    public static final DeferredItem<MilitaryHarnessItem> MILITARY_HARNESS = ITEMS.registerItem(
-            "military_harness",
-            MilitaryHarnessItem::new,
-            MilitaryHarnessItem::properties
+    public static final Identifier MILITARY_HARNESS_ID = Identifier.fromNamespaceAndPath(MOD_ID, "military_harness");
+    public static final ResourceKey<Item> MILITARY_HARNESS_KEY = ResourceKey.create(Registries.ITEM, MILITARY_HARNESS_ID);
+    public static final MilitaryHarnessItem MILITARY_HARNESS = new MilitaryHarnessItem(
+            MilitaryHarnessItem.properties().setId(MILITARY_HARNESS_KEY)
     );
 
-    public HappyGhastOverhaul(IEventBus modEventBus, ModContainer modContainer) {
-        ITEMS.register(modEventBus);
-        modEventBus.addListener(this::addCreativeTabEntries);
-        NeoForge.EVENT_BUS.register(new MilitaryHarnessEffects());
-    }
-
-    private void addCreativeTabEntries(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(MILITARY_HARNESS);
-        }
+    @Override
+    public void onInitialize() {
+        Registry.register(BuiltInRegistries.ITEM, MILITARY_HARNESS_KEY, MILITARY_HARNESS);
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
+                .register(entries -> entries.accept(MILITARY_HARNESS));
     }
 }
