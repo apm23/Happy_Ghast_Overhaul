@@ -1,6 +1,7 @@
 package com.apm23.happyghastoverhaul.client;
 
 import com.apm23.happyghastoverhaul.HappyGhastOverhaul;
+import com.apm23.happyghastoverhaul.client.render.MilitaryHarnessClientVisuals;
 import com.apm23.happyghastoverhaul.gameplay.FlightInputState;
 import com.apm23.happyghastoverhaul.gameplay.FlightSpeedState;
 import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
@@ -25,6 +26,8 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        MilitaryHarnessClientVisuals.register();
+
         ascend = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.happy_ghast_overhaul.ascend",
                 InputConstants.Type.KEYSYM,
