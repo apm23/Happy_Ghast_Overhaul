@@ -1,6 +1,7 @@
 package com.apm23.happyghastoverhaul.client;
 
 import com.apm23.happyghastoverhaul.HappyGhastOverhaul;
+import com.apm23.happyghastoverhaul.gameplay.FlightInputState;
 import com.apm23.happyghastoverhaul.gameplay.FlightSpeedState;
 import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -19,13 +20,21 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
     );
 
     private static KeyMapping cycleSpeed;
+    private static KeyMapping descend;
 
     @Override
     public void onInitializeClient() {
         cycleSpeed = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.happy_ghast_overhaul.cycle_speed",
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_LEFT_CONTROL,
+                GLFW.GLFW_KEY_R,
+                CATEGORY
+        ));
+
+        descend = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.happy_ghast_overhaul.descend",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_CAPS_LOCK,
                 CATEGORY
         ));
 
@@ -34,6 +43,8 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
                     && client.player.getVehicle() instanceof HappyGhast ghast
                     && ghast.getControllingPassenger() == client.player
                     && MilitaryHarnessEffects.isMilitaryHarnessEquipped(ghast);
+
+            FlightInputState.setDescendPressed(validPilot && descend.isDown());
 
             while (cycleSpeed.consumeClick()) {
                 if (validPilot) {
@@ -51,6 +62,7 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
 
             if (!validPilot) {
                 FlightSpeedState.reset();
+                FlightInputState.reset();
             }
         });
     }
