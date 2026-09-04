@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
+import net.minecraft.world.item.Item;
 
 public final class MilitaryHarnessEffects {
     public static final double BONUS_MAX_HEALTH = 250.0D;
@@ -27,23 +28,24 @@ public final class MilitaryHarnessEffects {
             AttributeModifier.Operation.ADD_VALUE
     );
 
-    private MilitaryHarnessEffects() {
+    private MilitaryHarnessEffects() {}
+
+    public static boolean isMilitaryHarnessItem(Item item) {
+        return item == HappyGhastOverhaul.MILITARY_HARNESS || item == HappyGhastOverhaul.REAPER_HARNESS;
     }
 
     public static boolean isMilitaryHarnessEquipped(HappyGhast ghast) {
-        return ghast.getItemBySlot(EquipmentSlot.BODY).getItem() == HappyGhastOverhaul.MILITARY_HARNESS;
+        return isMilitaryHarnessItem(ghast.getItemBySlot(EquipmentSlot.BODY).getItem());
+    }
+
+    public static boolean isReaperHarnessEquipped(HappyGhast ghast) {
+        return ghast.getItemBySlot(EquipmentSlot.BODY).getItem() == HappyGhastOverhaul.REAPER_HARNESS;
     }
 
     public static void syncMaxHealthModifier(HappyGhast ghast) {
-        if (ghast.level().isClientSide()) {
-            return;
-        }
-
+        if (ghast.level().isClientSide()) return;
         AttributeInstance maxHealth = ghast.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth == null) {
-            return;
-        }
-
+        if (maxHealth == null) return;
         boolean equipped = isMilitaryHarnessEquipped(ghast);
         boolean modifierPresent = maxHealth.hasModifier(MAX_HEALTH_MODIFIER_ID);
         if (equipped && !modifierPresent) {
@@ -63,10 +65,7 @@ public final class MilitaryHarnessEffects {
     }
 
     public static float modifyDamage(HappyGhast ghast, DamageSource source, float amount) {
-        if (!isMilitaryHarnessEquipped(ghast) || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-            return amount;
-        }
-
+        if (!isMilitaryHarnessEquipped(ghast) || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return amount;
         boolean projectile = source.is(DamageTypeTags.IS_PROJECTILE);
         boolean explosion = source.is(DamageTypeTags.IS_EXPLOSION);
         boolean melee = source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
