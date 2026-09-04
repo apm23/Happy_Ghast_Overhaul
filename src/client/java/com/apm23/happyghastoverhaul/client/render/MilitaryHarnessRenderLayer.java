@@ -13,11 +13,13 @@ import net.minecraft.resources.Identifier;
 public final class MilitaryHarnessRenderLayer
         extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
 
-    // Temporary vanilla-backed texture during geometry validation. Dedicated atlas follows once
-    // the layer is proven stable under the 26.2 renderer.
+    // Geometry is now validated on 26.2. Keep the vanilla-backed atlas while the dedicated
+    // 128x128 Military Harness texture is authored; tint establishes the locked black-metal base.
     private static final Identifier VALIDATION_TEXTURE = Identifier.withDefaultNamespace(
             "textures/entity/happy_ghast/happy_ghast.png"
     );
+
+    private static final int BLACK_METAL = 0xFF17191F;
 
     private final MilitaryHarnessVisualModel model;
 
@@ -49,7 +51,7 @@ public final class MilitaryHarnessRenderLayer
                 collector,
                 packedLight,
                 state,
-                0xFF20242A,
+                BLACK_METAL,
                 0
         );
     }
