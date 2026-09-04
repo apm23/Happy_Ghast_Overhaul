@@ -3,37 +3,100 @@ package com.apm23.happyghastoverhaul.mixin;
 import com.apm23.happyghastoverhaul.gameplay.FlightSpeedState;
 import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(HappyGhast.class)
 public abstract class HappyGhastSpeedMixin extends Animal {
+    private static final double RESPONSIVE_AIR_DRAG = 0.70D;
+    private static final float RESPONSIVE_TURN_RATE = 0.35F;
+
     protected HappyGhastSpeedMixin(EntityType<? extends Animal> type, Level level) {
         super(type, level);
     }
 
     /**
-     * Vanilla Happy Ghast travel derives ridden flight acceleration from a 5.0F constant.
-     * Scaling only that value preserves the vanilla movement algorithm exactly at Lv1 and
-     * proportionally raises its settled speed at Lv2-Lv4.
+     * Military Harness control model:
+     * - WASD remains purely horizontal.
+     * - Space ascends.
+     * - Shift descends.
+     * - Looking up/down no longer changes altitude.
+     * - With no vertical input, altitude is held instead of slowly sinking.
      */
-    @ModifyConstant(method = "travel", constant = @Constant(floatValue = 5.0F))
-    private float happyGhastOverhaul$scaleRiddenSpeed(float vanillaConstant) {
+    @Inject(method = "getRiddenInput", at = @At("RETURN"), cancellable = true)
+    private void happyGhastOverhaul$playerLikeInput(
+            Player controller,
+            Vec3 selfInput,
+            CallbackInfoReturnable<Vec3> cir
+    ) {
+        HappyGhast ghast = (HappyGhast) (Object) this;
+        if (!this.level().isClientSide() || !MilitaryHarnessEffects.isMilitaryHarnessEquipped(ghast)) {
+            return;
+        }
+
+        Vec3 vanilla = cir.getReturnValue();
+        double vertical = controller.isJumping() ? 1.0D : controller.isShiftKeyDown() ? -1.0D : 0.0D;
+        cir.setReturnValue(new Vec3(vanilla.x, vertical, vanilla.z));
+    }
+
+    /**
+     * Replace only ridden Military Harness air movement with a responsive integrator.
+     * The multiplier remains linear relative to vanilla top speed while drag is tightened
+     * so starting/stopping feels much closer to direct player movement.
+     */
+    @Inject(method = "travel", at = @At("HEAD"), cancellable = true)
+    private void happyGhastOverhaul$responsiveTravel(Vec3 input, CallbackInfo ci) {
         if (!this.level().isClientSide()) {
-            return vanillaConstant;
+            return;
         }
 
         HappyGhast ghast = (HappyGhast) (Object) this;
         if (!(ghast.getControllingPassenger() instanceof Player)
                 || !MilitaryHarnessEffects.isMilitaryHarnessEquipped(ghast)) {
-            return vanillaConstant;
+            return;
         }
 
-        return FlightSpeedState.scale(vanillaConstant);
+        double multiplier = FlightSpeedState.multiplier();
+        double vanillaDrag = 0.91D;
+        double dragCompensation = ((1.0D - RESPONSIVE_AIR_DRAG) / RESPONSIVE_AIR_DRAG)
+                / ((1.0D - vanillaDrag) / vanillaDrag);
+
+        Vec3 direction = input;
+        double lengthCompensation = 1.0D;
+        double length = input.length();
+        if (length > 1.0D) {
+            direction = input.scale(1.0D / length);
+            lengthCompensation = length;
+        }
+
+        float vanillaSpeed = (float) this.getAttributeValue(Attributes.FLYING_SPEED) * 5.0F / 3.0F;
+        float speed = (float) (vanillaSpeed * multiplier * dragCompensation * lengthCompensation);
+        double drag = this.isInWater() ? 0.8D : this.isInLava() ? 0.5D : RESPONSIVE_AIR_DRAG;
+
+        this.moveRelative(speed, direction);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.setDeltaMovement(this.getDeltaMovement().scale(drag));
+        ci.cancel();
+    }
+
+    @ModifyConstant(method = "tickRidden", constant = @Constant(floatValue = 0.08F))
+    private float happyGhastOverhaul$snappierTurning(float vanilla) {
+        HappyGhast ghast = (HappyGhast) (Object) this;
+        if (!this.level().isClientSide() || !MilitaryHarnessEffects.isMilitaryHarnessEquipped(ghast)) {
+            return vanilla;
+        }
+        return RESPONSIVE_TURN_RATE;
     }
 }
