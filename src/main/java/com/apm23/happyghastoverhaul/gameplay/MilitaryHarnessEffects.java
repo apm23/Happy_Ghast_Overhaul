@@ -10,12 +10,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
-import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
-import net.minecraft.world.phys.EntityHitResult;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 public final class MilitaryHarnessEffects {
     public static final double BONUS_MAX_HEALTH = 250.0D;
@@ -33,28 +27,24 @@ public final class MilitaryHarnessEffects {
             AttributeModifier.Operation.ADD_VALUE
     );
 
-    public static boolean isMilitaryHarnessEquipped(HappyGhast ghast) {
-        return ghast.getItemBySlot(EquipmentSlot.BODY).getItem() == HappyGhastOverhaul.MILITARY_HARNESS.get();
+    private MilitaryHarnessEffects() {
     }
 
-    @SubscribeEvent
-    public void onEquipmentChange(LivingEquipmentChangeEvent event) {
-        if (!(event.getEntity() instanceof HappyGhast ghast)
-                || event.getSlot() != EquipmentSlot.BODY
-                || ghast.level().isClientSide()) {
+    public static boolean isMilitaryHarnessEquipped(HappyGhast ghast) {
+        return ghast.getItemBySlot(EquipmentSlot.BODY).getItem() == HappyGhastOverhaul.MILITARY_HARNESS;
+    }
+
+    public static void syncMaxHealthModifier(HappyGhast ghast) {
+        if (ghast.level().isClientSide()) {
             return;
         }
 
-        boolean nowMilitary = event.getTo().getItem() == HappyGhastOverhaul.MILITARY_HARNESS.get();
-        syncMaxHealthModifier(ghast, nowMilitary);
-    }
-
-    private static void syncMaxHealthModifier(HappyGhast ghast, boolean equipped) {
         AttributeInstance maxHealth = ghast.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth == null) {
             return;
         }
 
+        boolean equipped = isMilitaryHarnessEquipped(ghast);
         boolean modifierPresent = maxHealth.hasModifier(MAX_HEALTH_MODIFIER_ID);
         if (equipped && !modifierPresent) {
             float oldHealth = ghast.getHealth();
@@ -66,48 +56,26 @@ public final class MilitaryHarnessEffects {
         }
     }
 
-    @SubscribeEvent
-    public void onIncomingDamage(LivingIncomingDamageEvent event) {
-        if (!(event.getEntity() instanceof HappyGhast ghast) || !isMilitaryHarnessEquipped(ghast)) {
-            return;
-        }
+    public static boolean shouldCancelDamage(HappyGhast ghast, DamageSource source) {
+        return isMilitaryHarnessEquipped(ghast)
+                && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+                && source.is(DamageTypeTags.IS_FIRE);
+    }
 
-        DamageSource source = event.getSource();
-
-        // Preserve void, /kill and other administrative/absolute damage semantics.
-        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-            return;
-        }
-
-        if (source.is(DamageTypeTags.IS_FIRE)) {
-            event.setCanceled(true);
-            return;
+    public static float modifyDamage(HappyGhast ghast, DamageSource source, float amount) {
+        if (!isMilitaryHarnessEquipped(ghast) || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return amount;
         }
 
         boolean projectile = source.is(DamageTypeTags.IS_PROJECTILE);
         boolean explosion = source.is(DamageTypeTags.IS_EXPLOSION);
         boolean melee = source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
-
-        if (projectile || explosion || melee) {
-            event.setAmount(event.getAmount() * PROTECTED_DAMAGE_MULTIPLIER);
-        }
+        return projectile || explosion || melee ? amount * PROTECTED_DAMAGE_MULTIPLIER : amount;
     }
 
-    @SubscribeEvent
-    public void onProjectileImpact(ProjectileImpactEvent event) {
-        if (!(event.getProjectile() instanceof Snowball snowball)
-                || snowball.level().isClientSide()
-                || !(event.getRayTraceResult() instanceof EntityHitResult hit)
-                || !(hit.getEntity() instanceof HappyGhast ghast)
-                || !isMilitaryHarnessEquipped(ghast)) {
-            return;
+    public static void healFromSnowball(HappyGhast ghast) {
+        if (isMilitaryHarnessEquipped(ghast) && !ghast.level().isClientSide()) {
+            ghast.heal(ghast.getMaxHealth() * SNOWBALL_HEAL_FRACTION);
         }
-
-        ghast.heal(ghast.getMaxHealth() * SNOWBALL_HEAL_FRACTION);
-
-        // Consume the snowball ourselves and skip vanilla impact handling so this
-        // special heal cannot also damage or trigger a second Happy Ghast effect.
-        snowball.discard();
-        event.setCanceled(true);
     }
 }
