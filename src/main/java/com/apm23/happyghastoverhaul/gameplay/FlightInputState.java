@@ -1,9 +1,18 @@
 package com.apm23.happyghastoverhaul.gameplay;
 
 public final class FlightInputState {
+    private static boolean ascendPressed;
     private static boolean descendPressed;
 
     private FlightInputState() {
+    }
+
+    public static boolean ascendPressed() {
+        return ascendPressed;
+    }
+
+    public static void setAscendPressed(boolean pressed) {
+        ascendPressed = pressed;
     }
 
     public static boolean descendPressed() {
@@ -15,6 +24,7 @@ public final class FlightInputState {
     }
 
     public static void reset() {
+        ascendPressed = false;
         descendPressed = false;
     }
 }
