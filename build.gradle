@@ -63,7 +63,7 @@ processResources {
     exclude 'assets/happy_ghast_overhaul/texture_sources/**'
 }
 
-tasks.named('sourcesJar') {
+tasks.matching { it.name == 'sourcesJar' }.configureEach {
     dependsOn generateMilitaryHarnessTextures
 }
 
