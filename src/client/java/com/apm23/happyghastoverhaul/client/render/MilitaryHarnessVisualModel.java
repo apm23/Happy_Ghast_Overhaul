@@ -10,149 +10,69 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
 
-/**
- * Geometry-first pass for the locked Military Harness visual reference.
- *
- * The silhouette deliberately uses real cuboids for the parts that must visibly protrude:
- * layered forehead/face armor, side utility modules, top deck, rails, command posts and
- * the banner mast. Micro-detail (bolts, scratches, panel lines) belongs in the texture pass.
- */
+/** Geometry for the locked Military Harness reference. */
 public final class MilitaryHarnessVisualModel extends EntityModel<HappyGhastRenderState> {
-    public MilitaryHarnessVisualModel(ModelPart root) {
-        super(root);
-    }
+    public MilitaryHarnessVisualModel(ModelPart root) { super(root); }
 
     public static LayerDefinition createLayer() {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();
 
-        // Main armored crown around the upper half of the Happy Ghast.
-        root.addOrReplaceChild("crown_front",
-                CubeListBuilder.create().texOffs(0, 0)
-                        .addBox(-9.5F, -9.5F, -10.25F, 19.0F, 6.0F, 2.25F, new CubeDeformation(0.0F)),
-                PartPose.ZERO);
-        root.addOrReplaceChild("crown_left",
-                CubeListBuilder.create().texOffs(0, 10)
-                        .addBox(8.0F, -9.5F, -8.0F, 2.25F, 8.0F, 16.0F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("crown_right",
-                CubeListBuilder.create().texOffs(38, 10)
-                        .addBox(-10.25F, -9.5F, -8.0F, 2.25F, 8.0F, 16.0F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("crown_back",
-                CubeListBuilder.create().texOffs(0, 35)
-                        .addBox(-9.5F, -9.5F, 8.0F, 19.0F, 8.0F, 2.25F),
-                PartPose.ZERO);
+        // Crown shell: heavy black military frame, but the vanilla face remains readable.
+        box(root,"crown_front",0,0,-9.5F,-9.5F,-10.25F,19,6,2.25F);
+        box(root,"crown_left",0,10,8,-9.5F,-8,2.25F,8,16);
+        box(root,"crown_right",38,10,-10.25F,-9.5F,-8,2.25F,8,16);
+        box(root,"crown_back",0,35,-9.5F,-9.5F,8,19,8,2.25F);
 
-        // Layered angular forehead and the long downward center spear from the reference.
-        root.addOrReplaceChild("forehead_plate",
-                CubeListBuilder.create().texOffs(0, 47)
-                        .addBox(-5.5F, -8.75F, -11.20F, 11.0F, 3.0F, 1.25F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("forehead_step",
-                CubeListBuilder.create().texOffs(26, 47)
-                        .addBox(-3.5F, -6.0F, -11.35F, 7.0F, 2.25F, 1.20F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("center_spear_upper",
-                CubeListBuilder.create().texOffs(46, 47)
-                        .addBox(-1.25F, -8.25F, -11.65F, 2.5F, 6.25F, 1.20F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("center_spear_lower",
-                CubeListBuilder.create().texOffs(56, 47)
-                        .addBox(-0.75F, -2.0F, -11.70F, 1.5F, 5.5F, 1.15F),
-                PartPose.ZERO);
+        // Reference face: stepped forehead, long central arrow, visor brows and lower jaw braces.
+        box(root,"forehead_plate",0,47,-5.5F,-8.75F,-11.20F,11,3,1.25F);
+        box(root,"forehead_step",26,47,-3.5F,-6,-11.35F,7,2.25F,1.20F);
+        box(root,"center_spear_upper",46,47,-1.25F,-8.25F,-11.65F,2.5F,6.25F,1.20F);
+        box(root,"center_spear_lower",56,47,-0.75F,-2,-11.70F,1.5F,7.25F,1.15F);
+        box(root,"spear_tip",62,47,-0.45F,5.25F,-11.72F,0.9F,2.2F,1.10F);
+        box(root,"brow_left",64,47,1.5F,-4.25F,-11.45F,6.25F,2,1.20F);
+        box(root,"brow_right",64,52,-7.75F,-4.25F,-11.45F,6.25F,2,1.20F);
+        box(root,"cheek_left",0,56,6.25F,-2,-10.90F,2.25F,7.5F,1.15F);
+        box(root,"cheek_right",8,56,-8.5F,-2,-10.90F,2.25F,7.5F,1.15F);
+        box(root,"jaw_left",12,56,4.5F,4.75F,-10.75F,3.5F,1.4F,1.1F);
+        box(root,"jaw_right",12,60,-8,4.75F,-10.75F,3.5F,1.4F,1.1F);
 
-        // Brow blocks leave the vanilla face visible while creating the visor-like silhouette.
-        root.addOrReplaceChild("brow_left",
-                CubeListBuilder.create().texOffs(64, 47)
-                        .addBox(1.5F, -4.25F, -11.45F, 6.25F, 2.0F, 1.20F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("brow_right",
-                CubeListBuilder.create().texOffs(64, 52)
-                        .addBox(-7.75F, -4.25F, -11.45F, 6.25F, 2.0F, 1.20F),
-                PartPose.ZERO);
+        // Layered side equipment gives the chunky silhouette visible in the locked render.
+        box(root,"utility_left_front",18,56,9.25F,-6.5F,-6.75F,3.75F,6,5.25F);
+        box(root,"utility_left_rear",38,56,9,-6,1,4.25F,6.5F,6.25F);
+        box(root,"utility_right_front",62,56,-13,-6.5F,-6.25F,3.75F,6,5);
+        box(root,"utility_right_rear",82,56,-13.25F,-6,1,4.25F,6.5F,6.25F);
+        box(root,"pod_left",96,56,10.2F,-1,-4.2F,2.5F,3.25F,3.25F);
+        box(root,"pod_right",108,56,-12.7F,-1,-4.2F,2.5F,3.25F,3.25F);
 
-        // Lower cheek brackets: intentionally do not cover the whole white face.
-        root.addOrReplaceChild("cheek_left",
-                CubeListBuilder.create().texOffs(0, 56)
-                        .addBox(6.25F, -2.0F, -10.90F, 2.25F, 7.5F, 1.15F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("cheek_right",
-                CubeListBuilder.create().texOffs(8, 56)
-                        .addBox(-8.5F, -2.0F, -10.90F, 2.25F, 7.5F, 1.15F),
-                PartPose.ZERO);
+        // Armored top deck, raised central spine and actual 3D railings.
+        box(root,"deck",0,70,-9,-11.25F,-8,18,2,16);
+        box(root,"deck_spine",68,70,-2.25F,-12.35F,-6.5F,4.5F,1.15F,13);
+        rail(root,"rail_front",-9,-14,-8.75F,18,.75F,.75F,0,90);
+        rail(root,"rail_back",-9,-14,8,18,.75F,.75F,0,94);
+        rail(root,"rail_left",8,-14,-8,.75F,.75F,16,40,90);
+        rail(root,"rail_right",-8.75F,-14,-8,.75F,.75F,16,44,90);
+        post(root,"post_fl",7,-18,-7,0,100);
+        post(root,"post_fr",-8,-18,-7,8,100);
+        post(root,"post_bl",7,-18,6,16,100);
+        post(root,"post_br",-8,-18,6,24,100);
+        post(root,"command_post",3.5F,-21,3.5F,32,100);
+        box(root,"command_head",40,100,2.25F,-23.25F,2.25F,3.5F,2.5F,3.5F);
 
-        // Side equipment boxes, deliberately asymmetric in depth to avoid a flat ring silhouette.
-        root.addOrReplaceChild("utility_left_front",
-                CubeListBuilder.create().texOffs(18, 56)
-                        .addBox(9.25F, -6.5F, -6.75F, 3.75F, 6.0F, 5.25F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("utility_left_rear",
-                CubeListBuilder.create().texOffs(38, 56)
-                        .addBox(9.0F, -6.0F, 1.0F, 4.25F, 6.5F, 6.25F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("utility_right_front",
-                CubeListBuilder.create().texOffs(62, 56)
-                        .addBox(-13.0F, -6.5F, -6.25F, 3.75F, 6.0F, 5.0F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("utility_right_rear",
-                CubeListBuilder.create().texOffs(82, 56)
-                        .addBox(-13.25F, -6.0F, 1.0F, 4.25F, 6.5F, 6.25F),
-                PartPose.ZERO);
+        // Locked banner placement: taller mast and larger cloth for the faction artwork.
+        box(root,"banner_mast",48,96,-7.75F,-27,5.75F,1,17.5F,1);
+        box(root,"banner_finial",52,96,-8.15F,-28,5.35F,1.8F,1.4F,1.8F);
+        box(root,"banner_crossbar",54,96,-7.25F,-26.5F,5.75F,9,1,1);
+        box(root,"banner_cloth",64,96,-6.75F,-25.25F,5.90F,7.5F,12.75F,.35F);
 
-        // Top armored deck.
-        root.addOrReplaceChild("deck",
-                CubeListBuilder.create().texOffs(0, 70)
-                        .addBox(-9.0F, -11.25F, -8.0F, 18.0F, 2.0F, 16.0F),
-                PartPose.ZERO);
-
-        // Railings: block-thin but truly 3D.
-        addRail(root, "rail_front", -9.0F, -14.0F, -8.75F, 18.0F, 0.75F, 0.75F, 0, 90);
-        addRail(root, "rail_back", -9.0F, -14.0F, 8.0F, 18.0F, 0.75F, 0.75F, 0, 94);
-        addRail(root, "rail_left", 8.0F, -14.0F, -8.0F, 0.75F, 0.75F, 16.0F, 40, 90);
-        addRail(root, "rail_right", -8.75F, -14.0F, -8.0F, 0.75F, 0.75F, 16.0F, 44, 90);
-
-        // Corner/command posts and lamp housings.
-        addPost(root, "post_fl", 7.0F, -18.0F, -7.0F, 0, 100);
-        addPost(root, "post_fr", -8.0F, -18.0F, -7.0F, 8, 100);
-        addPost(root, "post_bl", 7.0F, -18.0F, 6.0F, 16, 100);
-        addPost(root, "post_br", -8.0F, -18.0F, 6.0F, 24, 100);
-        addPost(root, "command_post", 3.5F, -21.0F, 3.5F, 32, 100);
-
-        // Banner mast on rear-right quadrant, matching the reference placement.
-        root.addOrReplaceChild("banner_mast",
-                CubeListBuilder.create().texOffs(48, 96)
-                        .addBox(-7.75F, -25.0F, 5.75F, 1.0F, 15.5F, 1.0F),
-                PartPose.ZERO);
-        root.addOrReplaceChild("banner_crossbar",
-                CubeListBuilder.create().texOffs(54, 96)
-                        .addBox(-7.25F, -25.0F, 5.75F, 8.0F, 1.0F, 1.0F),
-                PartPose.ZERO);
-
-        // Flat-but-thick cloth placeholder. Texture pass carries the locked skull/banner artwork.
-        root.addOrReplaceChild("banner_cloth",
-                CubeListBuilder.create().texOffs(64, 96)
-                        .addBox(-6.75F, -23.75F, 5.90F, 6.5F, 11.5F, 0.35F),
-                PartPose.ZERO);
-
-        return LayerDefinition.create(mesh, 128, 128);
+        return LayerDefinition.create(mesh,128,128);
     }
 
-    private static void addRail(PartDefinition root, String name,
-                                float x, float y, float z, float w, float h, float d,
-                                int u, int v) {
-        root.addOrReplaceChild(name,
-                CubeListBuilder.create().texOffs(u, v).addBox(x, y, z, w, h, d),
-                PartPose.ZERO);
+    private static void box(PartDefinition r,String n,int u,int v,float x,float y,float z,float w,float h,float d){
+        r.addOrReplaceChild(n,CubeListBuilder.create().texOffs(u,v).addBox(x,y,z,w,h,d,new CubeDeformation(0)),PartPose.ZERO);
     }
-
-    private static void addPost(PartDefinition root, String name,
-                                float x, float y, float z, int u, int v) {
-        root.addOrReplaceChild(name,
-                CubeListBuilder.create().texOffs(u, v)
-                        .addBox(x, y, z, 1.0F, 6.0F, 1.0F)
-                        .texOffs(u + 4, v)
-                        .addBox(x - 0.5F, y - 1.5F, z - 0.5F, 2.0F, 1.5F, 2.0F),
-                PartPose.ZERO);
+    private static void rail(PartDefinition r,String n,float x,float y,float z,float w,float h,float d,int u,int v){ box(r,n,u,v,x,y,z,w,h,d); }
+    private static void post(PartDefinition r,String n,float x,float y,float z,int u,int v){
+        r.addOrReplaceChild(n,CubeListBuilder.create().texOffs(u,v).addBox(x,y,z,1,6,1).texOffs(u+4,v).addBox(x-.5F,y-1.5F,z-.5F,2,1.5F,2),PartPose.ZERO);
     }
 }
