@@ -30,10 +30,9 @@ public abstract class HappyGhastSpeedMixin extends Animal {
 
     /**
      * Military Harness control model:
-     * - WASD remains purely horizontal.
-     * - Space ascends.
-     * - Rebindable descend key descends (Caps Lock by default).
-     * - Shift remains vanilla dismount.
+     * - Vanilla WASD is untouched for horizontal steering.
+     * - Dedicated rebindable Ascend/Descend keys control altitude.
+     * - Vanilla dismount binding is untouched.
      * - Looking up/down no longer changes altitude.
      * - With no vertical input, altitude is held instead of slowly sinking.
      */
@@ -49,15 +48,12 @@ public abstract class HappyGhastSpeedMixin extends Animal {
         }
 
         Vec3 vanilla = cir.getReturnValue();
-        double vertical = controller.isJumping() ? 1.0D : FlightInputState.descendPressed() ? -1.0D : 0.0D;
+        double vertical = FlightInputState.ascendPressed()
+                ? 1.0D
+                : FlightInputState.descendPressed() ? -1.0D : 0.0D;
         cir.setReturnValue(new Vec3(vanilla.x, vertical, vanilla.z));
     }
 
-    /**
-     * Replace only ridden Military Harness air movement with a responsive integrator.
-     * The multiplier remains linear relative to vanilla top speed while drag is tightened
-     * so starting/stopping feels much closer to direct player movement.
-     */
     @Inject(method = "travel", at = @At("HEAD"), cancellable = true)
     private void happyGhastOverhaul$responsiveTravel(Vec3 input, CallbackInfo ci) {
         if (!this.level().isClientSide()) {
