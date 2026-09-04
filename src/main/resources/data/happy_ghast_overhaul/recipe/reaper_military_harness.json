@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "R": "minecraft:redstone",
+    "H": "#happy_ghast_overhaul:vanilla_harnesses"
+  },
+  "pattern": [
+    " R ",
+    "RHR",
+    " R "
+  ],
+  "result": {
+    "id": "happy_ghast_overhaul:reaper_military_harness"
+  }
+}
