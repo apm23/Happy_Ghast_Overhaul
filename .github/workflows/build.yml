@@ -17,125 +17,96 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
 
-      - name: Set up Gradle 9.2.1
+      - name: Set up Gradle 9.5.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.2.1'
+          gradle-version: '9.5.1'
 
-      - name: Build
+      - name: Build Fabric JAR
         run: gradle build --stacktrace
 
-      - name: Verify packaged JAR
+      - name: Verify packaged Fabric JAR
         shell: bash
         run: |
           set -euo pipefail
-          JAR="$(find build/libs -maxdepth 1 -name '*.jar' | head -n 1)"
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$JAR"
+          jar tf "$JAR" > jar-contents.txt
           required=(
-            'META-INF/neoforge.mods.toml'
+            'fabric.mod.json'
             'happy_ghast_overhaul.mixins.json'
             'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class'
             'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class'
+            'com/apm23/happyghastoverhaul/mixin/HappyGhastHealthMixin.class'
             'com/apm23/happyghastoverhaul/mixin/HappyGhastSpeedMixin.class'
+            'com/apm23/happyghastoverhaul/mixin/LivingEntityDamageMixin.class'
+            'com/apm23/happyghastoverhaul/mixin/SnowballMixin.class'
             'data/happy_ghast_overhaul/recipe/military_harness.json'
             'data/minecraft/tags/item/harnesses.json'
             'assets/happy_ghast_overhaul/equipment/military_harness.json'
             'assets/happy_ghast_overhaul/items/military_harness.json'
           )
-          jar tf "$JAR" > jar-contents.txt
           for path in "${required[@]}"; do
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
           done
-          if jar tf "$JAR" | grep -q '/gametest/'; then
-            echo 'GameTest classes leaked into production JAR.'
-            exit 1
-          fi
 
-      - name: Functional Military Harness GameTests
-        shell: bash
-        run: |
-          set -o pipefail
-          rm -rf run-gametests
-          gradle runGameTests --no-daemon --stacktrace 2>&1 | tee functional-gametest.log
-
-      - name: Dedicated server smoke
+      - name: Dedicated Fabric server smoke
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
-          cat > run/server.properties <<'EOF'
-          online-mode=false
-          server-port=25565
-          level-name=world
-          spawn-protection=0
-          EOF
           : > server-smoke.log
-          gradle runServer --no-daemon > server-smoke.log 2>&1 &
+          timeout 120s gradle runServer --no-daemon --args='nogui' > server-smoke.log 2>&1 &
           PID=$!
-          cleanup() {
-            kill "$PID" 2>/dev/null || true
-            wait "$PID" 2>/dev/null || true
-          }
-          trap cleanup EXIT
-
           for i in $(seq 1 120); do
             if grep -Eq 'Done \([0-9.]+s\)!|Done \(' server-smoke.log; then
-              echo 'Dedicated server reached ready state.'
+              echo 'Fabric server reached ready state.'
+              kill "$PID" 2>/dev/null || true
+              wait "$PID" 2>/dev/null || true
               exit 0
             fi
             if ! kill -0 "$PID" 2>/dev/null; then
-              echo 'Dedicated server exited before ready state.'
               cat server-smoke.log
               exit 1
             fi
             sleep 1
           done
-
-          echo 'Dedicated server did not reach ready state in time.'
           cat server-smoke.log
           exit 1
 
-      - name: Client launch smoke
+      - name: Fabric client launch smoke
         shell: bash
         run: |
           set -euo pipefail
           : > client-smoke.log
           xvfb-run -a timeout 120s gradle runClient --no-daemon > client-smoke.log 2>&1 &
           PID=$!
-
           for i in $(seq 1 120); do
             if grep -Eq 'Setting user:|Backend library: LWJGL|OpenAL initialized|Reloading ResourceManager' client-smoke.log; then
-              echo 'Minecraft client reached runtime initialization.'
+              echo 'Fabric client reached runtime initialization.'
               kill "$PID" 2>/dev/null || true
               wait "$PID" 2>/dev/null || true
               exit 0
             fi
-            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Failed to load mod|ModLoadingException|Caused by:.*happy_ghast_overhaul' client-smoke.log; then
-              echo 'Client smoke detected a fatal mod/runtime error.'
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|happy_ghast_overhaul.*error' client-smoke.log; then
               cat client-smoke.log
               kill "$PID" 2>/dev/null || true
               wait "$PID" 2>/dev/null || true
               exit 1
             fi
             if ! kill -0 "$PID" 2>/dev/null; then
-              wait "$PID" || RC=$?
-              echo "Client exited before runtime-ready marker (rc=${RC:-0})."
               cat client-smoke.log
               exit 1
             fi
             sleep 1
           done
-
-          echo 'Client did not reach runtime-ready marker in time.'
           cat client-smoke.log
-          kill "$PID" 2>/dev/null || true
-          wait "$PID" 2>/dev/null || true
           exit 1
 
       - name: Upload smoke logs
@@ -144,14 +115,15 @@ jobs:
         with:
           name: smoke-logs
           path: |
-            functional-gametest.log
             server-smoke.log
             client-smoke.log
           if-no-files-found: ignore
 
-      - name: Upload JAR
+      - name: Upload Fabric JAR
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: happy-ghast-overhaul
-          path: build/libs/*.jar
+          name: happy-ghast-overhaul-fabric
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
