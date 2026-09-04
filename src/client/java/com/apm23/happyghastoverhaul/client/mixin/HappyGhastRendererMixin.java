@@ -14,15 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HappyGhastRenderer.class)
 public abstract class HappyGhastRendererMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
-    private void happyGhastOverhaul$markMilitaryHarness(
-            HappyGhast entity,
-            HappyGhastRenderState state,
-            float partialTicks,
-            CallbackInfo ci
-    ) {
-        ((FabricRenderState) state).setData(
-                MilitaryHarnessRenderData.EQUIPPED,
-                MilitaryHarnessEffects.isMilitaryHarnessEquipped(entity)
-        );
+    private void happyGhastOverhaul$markMilitaryHarness(HappyGhast entity, HappyGhastRenderState state, float partialTicks, CallbackInfo ci) {
+        FabricRenderState fabricState = (FabricRenderState) state;
+        fabricState.setData(MilitaryHarnessRenderData.EQUIPPED, MilitaryHarnessEffects.isMilitaryHarnessEquipped(entity));
+        fabricState.setData(MilitaryHarnessRenderData.REAPER, MilitaryHarnessEffects.isReaperHarnessEquipped(entity));
     }
 }
