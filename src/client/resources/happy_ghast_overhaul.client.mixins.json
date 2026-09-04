@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.apm23.happyghastoverhaul.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "HappyGhastRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
