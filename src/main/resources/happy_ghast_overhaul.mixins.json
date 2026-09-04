@@ -4,7 +4,10 @@
   "package": "com.apm23.happyghastoverhaul.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "HappyGhastSpeedMixin"
+    "HappyGhastHealthMixin",
+    "HappyGhastSpeedMixin",
+    "LivingEntityDamageMixin",
+    "SnowballMixin"
   ],
   "injectors": {
     "defaultRequire": 1
