@@ -31,11 +31,36 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 }
 
+def generatedMilitaryHarnessResources = layout.buildDirectory.dir('generated/militaryHarnessResources')
+
+sourceSets.main.resources.srcDir(generatedMilitaryHarnessResources)
+
+tasks.register('generateMilitaryHarnessTextures') {
+    inputs.dir('src/main/resources/assets/happy_ghast_overhaul/texture_sources')
+    outputs.dir(generatedMilitaryHarnessResources)
+
+    doLast {
+        def outputDir = generatedMilitaryHarnessResources.get().dir('assets/happy_ghast_overhaul/textures/entity/military_harness').asFile
+        outputDir.mkdirs()
+        [
+                'military_harness_sentinel.png',
+                'military_harness_reaper.png',
+                'military_harness_emissive.png'
+        ].each { fileName ->
+            def source = file("src/main/resources/assets/happy_ghast_overhaul/texture_sources/${fileName}.b64")
+            def target = new File(outputDir, fileName)
+            target.bytes = java.util.Base64.decoder.decode(source.text.trim())
+        }
+    }
+}
+
 processResources {
+    dependsOn tasks.named('generateMilitaryHarnessTextures')
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }
+    exclude 'assets/happy_ghast_overhaul/texture_sources/**'
 }
 
 tasks.withType(JavaCompile).configureEach {
