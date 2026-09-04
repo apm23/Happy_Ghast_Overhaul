@@ -1,5 +1,6 @@
 package com.apm23.happyghastoverhaul.mixin;
 
+import com.apm23.happyghastoverhaul.gameplay.FlightInputState;
 import com.apm23.happyghastoverhaul.gameplay.FlightSpeedState;
 import com.apm23.happyghastoverhaul.gameplay.MilitaryHarnessEffects;
 import net.minecraft.world.entity.EntityType;
@@ -31,7 +32,8 @@ public abstract class HappyGhastSpeedMixin extends Animal {
      * Military Harness control model:
      * - WASD remains purely horizontal.
      * - Space ascends.
-     * - Shift descends.
+     * - Rebindable descend key descends (Caps Lock by default).
+     * - Shift remains vanilla dismount.
      * - Looking up/down no longer changes altitude.
      * - With no vertical input, altitude is held instead of slowly sinking.
      */
@@ -47,7 +49,7 @@ public abstract class HappyGhastSpeedMixin extends Animal {
         }
 
         Vec3 vanilla = cir.getReturnValue();
-        double vertical = controller.isJumping() ? 1.0D : controller.isShiftKeyDown() ? -1.0D : 0.0D;
+        double vertical = controller.isJumping() ? 1.0D : FlightInputState.descendPressed() ? -1.0D : 0.0D;
         cir.setReturnValue(new Vec3(vanilla.x, vertical, vanilla.z));
     }
 
