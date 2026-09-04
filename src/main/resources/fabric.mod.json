@@ -11,7 +11,13 @@
     "main": ["com.apm23.happyghastoverhaul.HappyGhastOverhaul"],
     "client": ["com.apm23.happyghastoverhaul.client.MilitaryHarnessClient"]
   },
-  "mixins": ["happy_ghast_overhaul.mixins.json"],
+  "mixins": [
+    "happy_ghast_overhaul.mixins.json",
+    {
+      "config": "happy_ghast_overhaul.client.mixins.json",
+      "environment": "client"
+    }
+  ],
   "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": "~26.2",
