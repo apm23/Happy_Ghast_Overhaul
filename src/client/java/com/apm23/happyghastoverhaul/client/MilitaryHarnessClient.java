@@ -19,15 +19,16 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
             Identifier.fromNamespaceAndPath(HappyGhastOverhaul.MOD_ID, "controls")
     );
 
-    private static KeyMapping cycleSpeed;
+    private static KeyMapping ascend;
     private static KeyMapping descend;
+    private static KeyMapping cycleSpeed;
 
     @Override
     public void onInitializeClient() {
-        cycleSpeed = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.happy_ghast_overhaul.cycle_speed",
+        ascend = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.happy_ghast_overhaul.ascend",
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_R,
+                GLFW.GLFW_KEY_SPACE,
                 CATEGORY
         ));
 
@@ -38,12 +39,20 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
                 CATEGORY
         ));
 
+        cycleSpeed = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.happy_ghast_overhaul.cycle_speed",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_R,
+                CATEGORY
+        ));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             boolean validPilot = client.player != null
                     && client.player.getVehicle() instanceof HappyGhast ghast
                     && ghast.getControllingPassenger() == client.player
                     && MilitaryHarnessEffects.isMilitaryHarnessEquipped(ghast);
 
+            FlightInputState.setAscendPressed(validPilot && ascend.isDown());
             FlightInputState.setDescendPressed(validPilot && descend.isDown());
 
             while (cycleSpeed.consumeClick()) {
