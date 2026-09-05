@@ -16,13 +16,13 @@ public final class HappyGhastOverhaul implements ModInitializer {
     public static final Identifier MILITARY_HARNESS_ID = Identifier.fromNamespaceAndPath(MOD_ID, "military_harness");
     public static final ResourceKey<Item> MILITARY_HARNESS_KEY = ResourceKey.create(Registries.ITEM, MILITARY_HARNESS_ID);
     public static final MilitaryHarnessItem MILITARY_HARNESS = new MilitaryHarnessItem(
-            MilitaryHarnessItem.properties().setId(MILITARY_HARNESS_KEY)
+            MilitaryHarnessItem.properties(MilitaryHarnessItem.SENTINEL_ASSET).setId(MILITARY_HARNESS_KEY)
     );
 
     public static final Identifier REAPER_HARNESS_ID = Identifier.fromNamespaceAndPath(MOD_ID, "reaper_military_harness");
     public static final ResourceKey<Item> REAPER_HARNESS_KEY = ResourceKey.create(Registries.ITEM, REAPER_HARNESS_ID);
     public static final MilitaryHarnessItem REAPER_HARNESS = new MilitaryHarnessItem(
-            MilitaryHarnessItem.properties().setId(REAPER_HARNESS_KEY)
+            MilitaryHarnessItem.properties(MilitaryHarnessItem.REAPER_ASSET).setId(REAPER_HARNESS_KEY)
     );
 
     @Override
