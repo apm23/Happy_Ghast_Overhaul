@@ -14,22 +14,26 @@ import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.item.equipment.Equippable;
 
 public final class MilitaryHarnessItem extends Item {
-    public static final ResourceKey<EquipmentAsset> ASSET = ResourceKey.create(
+    public static final ResourceKey<EquipmentAsset> SENTINEL_ASSET = ResourceKey.create(
             EquipmentAssets.ROOT_ID,
             Identifier.fromNamespaceAndPath(HappyGhastOverhaul.MOD_ID, "military_harness")
+    );
+    public static final ResourceKey<EquipmentAsset> REAPER_ASSET = ResourceKey.create(
+            EquipmentAssets.ROOT_ID,
+            Identifier.fromNamespaceAndPath(HappyGhastOverhaul.MOD_ID, "reaper_military_harness")
     );
 
     public MilitaryHarnessItem(Properties properties) {
         super(properties);
     }
 
-    public static Properties properties() {
+    public static Properties properties(ResourceKey<EquipmentAsset> asset) {
         Equippable equippable = Equippable.builder(EquipmentSlot.BODY)
                 .setEquipSound(SoundEvents.HARNESS_EQUIP)
                 .setAllowedEntities(EntityTypes.HAPPY_GHAST)
                 .setEquipOnInteract(true)
                 .setDamageOnHurt(false)
-                .setAsset(ASSET)
+                .setAsset(asset)
                 .build();
 
         return new Properties()
