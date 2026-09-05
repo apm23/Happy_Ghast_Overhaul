@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
 /** Shared 3D geometry with dedicated faction textures and amethyst emissive pass. */
@@ -44,27 +45,29 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
         boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
         Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
 
-        coloredCutoutModelCopyLayerRender(
+        // Submit our model directly instead of routing through the vanilla copy-layer helper.
+        // The harness geometry is independent from HappyGhastModel and should not be copied
+        // from the vanilla body/harness hierarchy.
+        collector.submitModel(
                 this.model,
-                baseTexture,
-                poseStack,
-                collector,
-                packedLight,
                 state,
+                poseStack,
+                this.model.renderType(baseTexture),
+                packedLight,
+                OverlayTexture.NO_OVERLAY,
                 WHITE,
-                0
+                null
         );
 
-        // Transparent full-bright mask only lights the amethyst crystals / visor accents.
-        coloredCutoutModelCopyLayerRender(
+        collector.submitModel(
                 this.model,
-                EMISSIVE_TEXTURE,
-                poseStack,
-                collector,
-                FULL_BRIGHT,
                 state,
+                poseStack,
+                this.model.renderType(EMISSIVE_TEXTURE),
+                FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY,
                 WHITE,
-                0
+                null
         );
     }
 }
