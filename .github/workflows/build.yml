@@ -40,20 +40,33 @@ jobs:
           required=(
             'fabric.mod.json'
             'happy_ghast_overhaul.mixins.json'
+            'happy_ghast_overhaul.client.mixins.json'
             'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class'
             'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class'
             'com/apm23/happyghastoverhaul/mixin/HappyGhastHealthMixin.class'
             'com/apm23/happyghastoverhaul/mixin/HappyGhastSpeedMixin.class'
             'com/apm23/happyghastoverhaul/mixin/LivingEntityDamageMixin.class'
             'com/apm23/happyghastoverhaul/mixin/SnowballMixin.class'
+            'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessVisualModel.class'
+            'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessRenderLayer.class'
             'data/happy_ghast_overhaul/recipe/military_harness.json'
+            'data/happy_ghast_overhaul/recipe/reaper_military_harness.json'
+            'data/happy_ghast_overhaul/tags/item/vanilla_harnesses.json'
             'data/minecraft/tags/item/harnesses.json'
             'assets/happy_ghast_overhaul/equipment/military_harness.json'
             'assets/happy_ghast_overhaul/items/military_harness.json'
+            'assets/happy_ghast_overhaul/items/reaper_military_harness.json'
+            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel.png'
+            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper.png'
+            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_emissive.png'
           )
           for path in "${required[@]}"; do
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
           done
+          if grep -Fq 'assets/happy_ghast_overhaul/texture_sources/' jar-contents.txt; then
+            echo 'Raw base64 texture sources must not be packaged in the runtime JAR.'
+            exit 1
+          fi
 
       - name: Dedicated Fabric server smoke
         shell: bash
