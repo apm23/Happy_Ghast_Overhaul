@@ -40,6 +40,9 @@ public final class MilitaryHarnessVisualModel extends EntityModel<HappyGhastRend
         box(root,"pod_right",108,56,-12.7F,-1,-4.2F,2.5F,3.25F,3.25F);
         box(root,"deck",0,70,-9,-11.25F,-8,18,2,16);
         box(root,"deck_spine",68,70,-2.25F,-12.35F,-6.5F,4.5F,1.15F,13);
+        // Raised armored deck edges give the top platform a heavier, less flat silhouette.
+        box(root,"deck_front_lip",88,70,-8.5F,-12.55F,-8.35F,17,1.25F,.8F);
+        box(root,"deck_back_lip",88,74,-8.5F,-12.55F,7.55F,17,1.25F,.8F);
         rail(root,"rail_front",-9,-14,-8.75F,18,.75F,.75F,0,90);
         rail(root,"rail_back",-9,-14,8,18,.75F,.75F,0,94);
         rail(root,"rail_left",8,-14,-8,.75F,.75F,16,40,90);
@@ -60,10 +63,16 @@ public final class MilitaryHarnessVisualModel extends EntityModel<HappyGhastRend
         box(root,"antenna_right",40,112,4.1F,-24,5.25F,.5F,6.5F,.5F);
         box(root,"antenna_tip",44,112,5.05F,-26.35F,3.85F,1.25F,1.25F,1.25F);
 
+        // Faction standard: reinforced mast, framed cloth and layered center badge.
         box(root,"banner_mast",48,96,-7.75F,-27,5.75F,1,17.5F,1);
         box(root,"banner_finial",52,96,-8.15F,-28,5.35F,1.8F,1.4F,1.8F);
         box(root,"banner_crossbar",54,96,-7.25F,-26.5F,5.75F,9,1,1);
         box(root,"banner_cloth",64,96,-6.75F,-25.25F,5.90F,7.5F,12.75F,.35F);
+        box(root,"banner_top_trim",92,96,-6.75F,-25.25F,5.50F,7.5F,.65F,.75F);
+        box(root,"banner_bottom_trim",92,100,-6.75F,-13.15F,5.50F,7.5F,.65F,.75F);
+        box(root,"banner_badge_outer",92,104,-4.65F,-21.75F,5.28F,3.3F,5.6F,.45F);
+        box(root,"banner_badge_inner",108,104,-4.05F,-20.95F,5.02F,2.1F,4F,.40F);
+        box(root,"banner_badge_tip",118,104,-3.55F,-16.95F,4.98F,1.1F,1.45F,.38F);
         return LayerDefinition.create(mesh,128,128);
     }
     private static void box(PartDefinition r,String n,int u,int v,float x,float y,float z,float w,float h,float d){r.addOrReplaceChild(n,CubeListBuilder.create().texOffs(u,v).addBox(x,y,z,w,h,d,new CubeDeformation(0)),PartPose.ZERO);}
