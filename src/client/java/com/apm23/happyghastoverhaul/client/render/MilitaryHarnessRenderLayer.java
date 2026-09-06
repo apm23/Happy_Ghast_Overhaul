@@ -29,13 +29,14 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
     private static final int FULL_BRIGHT = 0x00F000F0;
 
     /*
-     * EntityModel roots are submitted in renderer space, while the geometry below was authored
-     * around the vanilla HappyGhast body origin.  The vanilla renderer moves/scales its body
-     * before drawing; our independent layer must reproduce that body-space offset explicitly.
-     * Without this translation the armour intersects the centre of the ghast (visible in the
-     * first real in-game test).
+     * The custom mesh was authored against a compact ~20px ghast shell while the adult Happy
+     * Ghast body occupies a much larger cube.  Rendering it 1:1 therefore places most armour
+     * inside the body; only the highest/front-most pieces poke through.  Fit the authored shell
+     * around the adult body before submitting it.  The scale expands X/Z onto the outside faces
+     * and also preserves the intended proportions of the command deck / spear.
      */
-    private static final float BODY_Y_OFFSET = -1.0F;
+    private static final float HARNESS_SCALE = 1.65F;
+    private static final float BODY_Y_OFFSET = -0.55F;
 
     private final MilitaryHarnessVisualModel model;
 
@@ -56,6 +57,7 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
 
         poseStack.pushPose();
         poseStack.translate(0.0F, BODY_Y_OFFSET, 0.0F);
+        poseStack.scale(HARNESS_SCALE, HARNESS_SCALE, HARNESS_SCALE);
 
         collector.submitModel(
                 this.model,
