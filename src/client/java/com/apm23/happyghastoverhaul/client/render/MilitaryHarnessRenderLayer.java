@@ -28,6 +28,15 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
     private static final int WHITE = 0xFFFFFFFF;
     private static final int FULL_BRIGHT = 0x00F000F0;
 
+    /*
+     * EntityModel roots are submitted in renderer space, while the geometry below was authored
+     * around the vanilla HappyGhast body origin.  The vanilla renderer moves/scales its body
+     * before drawing; our independent layer must reproduce that body-space offset explicitly.
+     * Without this translation the armour intersects the centre of the ghast (visible in the
+     * first real in-game test).
+     */
+    private static final float BODY_Y_OFFSET = -1.0F;
+
     private final MilitaryHarnessVisualModel model;
 
     public MilitaryHarnessRenderLayer(RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent, MilitaryHarnessVisualModel model) {
@@ -45,9 +54,9 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
         boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
         Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
 
-        // Submit our model directly instead of routing through the vanilla copy-layer helper.
-        // The harness geometry is independent from HappyGhastModel and should not be copied
-        // from the vanilla body/harness hierarchy.
+        poseStack.pushPose();
+        poseStack.translate(0.0F, BODY_Y_OFFSET, 0.0F);
+
         collector.submitModel(
                 this.model,
                 state,
@@ -69,5 +78,6 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
                 WHITE,
                 null
         );
+        poseStack.popPose();
     }
 }
