@@ -29,15 +29,12 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
     private static final int FULL_BRIGHT = 0x00F000F0;
 
     /*
-     * The custom mesh was authored against a compact ~20px ghast shell while the adult Happy
-     * Ghast body occupies a much larger cube.  Rendering it 1:1 therefore places most armour
-     * inside the body; only the highest/front-most pieces poke through.  Fit the authored shell
-     * around the adult body before submitting it.  The scale expands X/Z onto the outside faces
-     * and also preserves the intended proportions of the command deck / spear.
+     * Adult Happy Ghast body is 64 model pixels (4 blocks) wide/high/deep.
+     * MilitaryHarnessVisualModel is authored in vanilla Java model-pixel coordinates and its
+     * shell spans roughly 26.5 px including side pods. Do NOT globally scale this assembly:
+     * doing so also magnifies the deck/banner/antennae and is the reason build #93 exploded.
+     * The geometry itself is fitted to the 64 px adult body instead.
      */
-    private static final float HARNESS_SCALE = 1.65F;
-    private static final float BODY_Y_OFFSET = -0.55F;
-
     private final MilitaryHarnessVisualModel model;
 
     public MilitaryHarnessRenderLayer(RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent, MilitaryHarnessVisualModel model) {
@@ -56,8 +53,6 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
         Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
 
         poseStack.pushPose();
-        poseStack.translate(0.0F, BODY_Y_OFFSET, 0.0F);
-        poseStack.scale(HARNESS_SCALE, HARNESS_SCALE, HARNESS_SCALE);
 
         collector.submitModel(
                 this.model,
