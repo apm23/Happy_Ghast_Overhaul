@@ -91,14 +91,10 @@ jobs:
           Xvfb "$DISPLAY" -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 & XVFB_PID=$!
           for i in $(seq 1 20); do xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break; kill -0 "$XVFB_PID" 2>/dev/null || { cat xvfb.log; exit 1; }; sleep 1; done
           xdpyinfo -display "$DISPLAY" >/dev/null
-          gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
+          JAVA_TOOL_OPTIONS='-DhappyGhastVisualSmokeServer=127.0.0.1:25565' gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
           WIN=''
           for i in $(seq 1 120); do WIN="$(xdotool search --name 'Minecraft' 2>/dev/null | tail -n1 || true)"; test -n "$WIN" && break; kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }; sleep 1; done
           test -n "$WIN" || { import -display "$DISPLAY" -window root run/screenshots/visual-smoke/window-failure.png || true; cat visual-client.log; exit 1; }
-          sleep 2
-          xdotool key --window "$WIN" Tab Tab Return; sleep 3
-          xdotool key --window "$WIN" Tab Return; sleep 2
-          xdotool type --window "$WIN" --delay 25 '127.0.0.1:25565'; xdotool key --window "$WIN" Return
           for i in $(seq 1 180); do grep -Eq 'joined the game' visual-server.log && break; if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Connection refused' visual-client.log; then cat visual-client.log; exit 1; fi; kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }; sleep 1; done
           grep -Eq 'joined the game' visual-server.log || { import -display "$DISPLAY" -window root run/screenshots/visual-smoke/join-failure.png || true; cat visual-server.log; cat visual-client.log; exit 1; }
           echo 'forceload add 0 0' >&3
