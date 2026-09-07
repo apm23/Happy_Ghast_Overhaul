@@ -45,7 +45,8 @@ def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTex
         [
                 'military_harness_sentinel.png',
                 'military_harness_reaper.png',
-                'military_harness_emissive.png'
+                'military_harness_sentinel_emissive.png',
+                'military_harness_reaper_emissive.png'
         ].each { fileName ->
             def source = file("src/main/resources/assets/happy_ghast_overhaul/texture_sources/${fileName}.b64")
             def target = new File(outputDir, fileName)
