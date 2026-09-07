@@ -3,6 +3,7 @@ package com.apm23.happyghastoverhaul.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.minecraft.client.model.animal.ghast.HappyGhastModel;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -10,22 +11,16 @@ import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
-/** Shared 3D geometry with dedicated faction base + emissive textures. */
+/** Shared FINAL v2 geometry with dedicated faction base + emissive textures. */
 public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int FULL_BRIGHT = 0x00F000F0;
 
-    /*
-     * FINAL v2 integration rule:
-     * Sentinel and Reaper keep identical geometry/UV. Faction differences are texture-only.
-     * The existing ModelPart renderer remains the compile-safe fallback until the UV-mesh
-     * submitter is wired in; do not mutate geometry here to imitate the FINAL v2 GLB.
-     */
-    private final MilitaryHarnessVisualModel model;
+    private final MilitaryHarnessVisualModel fallbackModel;
 
     public MilitaryHarnessRenderLayer(RenderLayerParent<HappyGhastRenderState, HappyGhastModel> parent, MilitaryHarnessVisualModel model) {
         super(parent);
-        this.model = model;
+        this.fallbackModel = model;
     }
 
     @Override
@@ -41,27 +36,44 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
 
         poseStack.pushPose();
 
-        collector.submitModel(
-                this.model,
-                state,
-                poseStack,
-                this.model.renderType(baseTexture),
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                WHITE,
-                null
-        );
+        var finalMesh = FinalV2PackedMesh.get();
+        if (finalMesh.isPresent()) {
+            FinalV2PackedMesh mesh = finalMesh.get();
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderType.entityCutoutNoCull(baseTexture),
+                    (pose, consumer) -> mesh.render(pose, consumer, packedLight)
+            );
+            collector.submitCustomGeometry(
+                    poseStack,
+                    RenderType.entityCutoutNoCull(emissiveTexture),
+                    (pose, consumer) -> mesh.render(pose, consumer, FULL_BRIGHT)
+            );
+        } else {
+            // Compile-safe/runtime-safe fallback until the packed FINAL v2 mesh asset is present.
+            collector.submitModel(
+                    this.fallbackModel,
+                    state,
+                    poseStack,
+                    this.fallbackModel.renderType(baseTexture),
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    WHITE,
+                    null
+            );
 
-        collector.submitModel(
-                this.model,
-                state,
-                poseStack,
-                this.model.renderType(emissiveTexture),
-                FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY,
-                WHITE,
-                null
-        );
+            collector.submitModel(
+                    this.fallbackModel,
+                    state,
+                    poseStack,
+                    this.fallbackModel.renderType(emissiveTexture),
+                    FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY,
+                    WHITE,
+                    null
+            );
+        }
+
         poseStack.popPose();
     }
 }
