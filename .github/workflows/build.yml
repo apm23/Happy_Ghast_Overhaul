@@ -58,7 +58,8 @@ jobs:
             'assets/happy_ghast_overhaul/items/reaper_military_harness.json'
             'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel.png'
             'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper.png'
-            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_emissive.png'
+            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel_emissive.png'
+            'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper_emissive.png'
           )
           for path in "${required[@]}"; do
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
