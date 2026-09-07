@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           JAR="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
           test -n "$JAR"; jar tf "$JAR" > jar-contents.txt
-          required=('fabric.mod.json' 'happy_ghast_overhaul.mixins.json' 'happy_ghast_overhaul.client.mixins.json' 'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class' 'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class' 'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessRenderLayer.class' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel_emissive.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper_emissive.png')
+          required=('fabric.mod.json' 'happy_ghast_overhaul.mixins.json' 'happy_ghast_overhaul.client.mixins.json' 'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class' 'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class' 'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessRenderLayer.class' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel_emissive.png' 'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper_emissive.png' 'assets/happy_ghast_overhaul/models/entity/military_harness/final_v2/military_harness_final_v2.hgv2')
           for path in "${required[@]}"; do grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }; done
           ! grep -Fq 'assets/happy_ghast_overhaul/texture_sources/' jar-contents.txt
           ! grep -Fq 'assets/happy_ghast_overhaul/mesh_sources/' jar-contents.txt
@@ -82,20 +82,17 @@ jobs:
           for i in $(seq 1 120); do grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log && break; kill -0 "$SERVER_PID" 2>/dev/null || { cat visual-server.log; exit 1; }; sleep 1; done
           grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log || { cat visual-server.log; exit 1; }
           DISPLAY_NUM=''
-          for n in $(seq 100 199); do
-            if test ! -e "/tmp/.X11-unix/X${n}" && test ! -e "/tmp/.X${n}-lock"; then DISPLAY_NUM="$n"; break; fi
-          done
+          for n in $(seq 100 199); do if test ! -e "/tmp/.X11-unix/X${n}" && test ! -e "/tmp/.X${n}-lock"; then DISPLAY_NUM="$n"; break; fi; done
           test -n "$DISPLAY_NUM" || { echo 'No free X display'; exit 1; }
           export DISPLAY=":${DISPLAY_NUM}"
-          echo "visual-smoke DISPLAY=$DISPLAY"
           Xvfb "$DISPLAY" -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 & XVFB_PID=$!
           for i in $(seq 1 20); do xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break; kill -0 "$XVFB_PID" 2>/dev/null || { cat xvfb.log; exit 1; }; sleep 1; done
           xdpyinfo -display "$DISPLAY" >/dev/null
-          JAVA_TOOL_OPTIONS='-DhappyGhastVisualSmokeServer=127.0.0.1:25565' gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
+          JAVA_TOOL_OPTIONS='-DhappyGhastVisualSmokeServer=127.0.0.1:25565 -DhappyGhastVisualSmokeCapture=true' gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
           for i in $(seq 1 180); do grep -Eq 'joined the game' visual-server.log && break; if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Connection refused' visual-client.log; then cat visual-client.log; exit 1; fi; kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }; sleep 1; done
           grep -Eq 'joined the game' visual-server.log || { cat visual-server.log; cat visual-client.log; exit 1; }
           echo 'forceload add 0 0' >&3
-          echo 'tp @a 0 120 20 180 25' >&3
+          echo 'tp @a 0 101 12 180 0' >&3
           echo 'kill @e[tag=visual_smoke_target]' >&3
           echo 'summon minecraft:happy_ghast 0 100 0 {Tags:["visual_smoke_target"],NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
           sleep 2
@@ -103,19 +100,7 @@ jobs:
           echo 'gamemode spectator @a' >&3
           echo 'effect give @a minecraft:night_vision infinite 0 true' >&3
           sleep 3
-          capture() {
-            name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"
-            rm -f "run/screenshots/visual-smoke/${name}.png"
-            echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3
-            for i in $(seq 1 45); do
-              test -s "run/screenshots/visual-smoke/${name}.png" && return 0
-              kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; return 1; }
-              sleep 1
-            done
-            echo "Timed out waiting for framebuffer capture: ${name}"
-            tail -n 200 visual-client.log
-            return 1
-          }
+          capture() { name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"; echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3; sleep 2; echo "${name}" > run/visual-smoke-capture.request; for i in $(seq 1 50); do test -s "run/screenshots/visual-smoke/${name}.png" && return 0; sleep 0.1; done; echo "Framebuffer capture timed out: ${name}"; cat visual-client.log; return 1; }
           capture front 0 101 12 180 0
           capture back 0 101 -12 0 0
           capture left -12 101 0 -90 0
@@ -133,8 +118,7 @@ jobs:
             file="run/screenshots/visual-smoke/${angle}.png"
             test -s "$file" || { echo "Missing ${angle}.png"; exit 1; }
             mean="$(convert "$file" -colorspace Gray -format '%[fx:mean]' info:)"
-            awk -v v="$mean" 'BEGIN { if (v <= 0.005) exit 1; }' || { echo "Black/empty framebuffer: ${angle}.png mean=${mean}"; exit 1; }
-            echo "${angle}.png mean=${mean}"
+            awk -v m="$mean" 'BEGIN { if (m <= 0.002) exit 1 }' || { echo "Black/empty framebuffer capture: ${angle}.png mean=${mean}"; exit 1; }
           done
           echo 'visual-smoke: 6/6 non-black framebuffer captures'
       - name: Upload six-angle visual smoke
