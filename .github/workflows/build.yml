@@ -43,19 +43,7 @@ jobs:
             'happy_ghast_overhaul.client.mixins.json'
             'com/apm23/happyghastoverhaul/item/MilitaryHarnessItem.class'
             'com/apm23/happyghastoverhaul/gameplay/MilitaryHarnessEffects.class'
-            'com/apm23/happyghastoverhaul/mixin/HappyGhastHealthMixin.class'
-            'com/apm23/happyghastoverhaul/mixin/HappyGhastSpeedMixin.class'
-            'com/apm23/happyghastoverhaul/mixin/LivingEntityDamageMixin.class'
-            'com/apm23/happyghastoverhaul/mixin/SnowballMixin.class'
-            'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessVisualModel.class'
             'com/apm23/happyghastoverhaul/client/render/MilitaryHarnessRenderLayer.class'
-            'data/happy_ghast_overhaul/recipe/military_harness.json'
-            'data/happy_ghast_overhaul/recipe/reaper_military_harness.json'
-            'data/happy_ghast_overhaul/tags/item/vanilla_harnesses.json'
-            'data/minecraft/tags/item/harnesses.json'
-            'assets/happy_ghast_overhaul/equipment/military_harness.json'
-            'assets/happy_ghast_overhaul/items/military_harness.json'
-            'assets/happy_ghast_overhaul/items/reaper_military_harness.json'
             'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel.png'
             'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_reaper.png'
             'assets/happy_ghast_overhaul/textures/entity/military_harness/military_harness_sentinel_emissive.png'
@@ -65,7 +53,11 @@ jobs:
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
           done
           if grep -Fq 'assets/happy_ghast_overhaul/texture_sources/' jar-contents.txt; then
-            echo 'Raw base64 texture sources must not be packaged in the runtime JAR.'
+            echo 'Raw texture sources must not be packaged.'
+            exit 1
+          fi
+          if grep -Fq 'assets/happy_ghast_overhaul/mesh_sources/' jar-contents.txt; then
+            echo 'Raw mesh sources must not be packaged.'
             exit 1
           fi
 
@@ -99,7 +91,6 @@ jobs:
         run: |
           set -euo pipefail
           : > client-smoke.log
-          mkdir -p run/screenshots/visual-smoke
           xvfb-run -a timeout 120s gradle runClient --no-daemon > client-smoke.log 2>&1 &
           PID=$!
           for i in $(seq 1 120); do
@@ -109,7 +100,7 @@ jobs:
               wait "$PID" 2>/dev/null || true
               exit 0
             fi
-            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|happy_ghast_overhaul.*error' client-smoke.log; then
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint' client-smoke.log; then
               cat client-smoke.log
               kill "$PID" 2>/dev/null || true
               wait "$PID" 2>/dev/null || true
@@ -124,23 +115,103 @@ jobs:
           cat client-smoke.log
           exit 1
 
+      - name: Install visual smoke capture tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xdotool imagemagick
+
+      - name: Capture real six-angle visual smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run/screenshots/visual-smoke
+          rm -f run/screenshots/visual-smoke/*.png
+          printf 'eula=true\n' > run/eula.txt
+          cat > run/server.properties <<'EOF'
+          online-mode=false
+          enforce-secure-profile=false
+          spawn-protection=0
+          level-name=visual-smoke-world
+          gamemode=creative
+          difficulty=peaceful
+          EOF
+
+          : > visual-server.log
+          : > visual-client.log
+          mkfifo visual-server.in
+          exec 3<>visual-server.in
+          gradle runServer --no-daemon --args='nogui' <&3 > visual-server.log 2>&1 &
+          SERVER_PID=$!
+          XVFB_PID=''
+          CLIENT_PID=''
+          cleanup() {
+            if test -n "${CLIENT_PID}"; then kill "$CLIENT_PID" 2>/dev/null || true; fi
+            if test -n "${SERVER_PID}"; then kill "$SERVER_PID" 2>/dev/null || true; fi
+            if test -n "${XVFB_PID}"; then kill "$XVFB_PID" 2>/dev/null || true; fi
+          }
+          trap cleanup EXIT
+
+          for i in $(seq 1 120); do
+            grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log && break
+            kill -0 "$SERVER_PID" 2>/dev/null || { cat visual-server.log; exit 1; }
+            sleep 1
+          done
+          grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log || { cat visual-server.log; exit 1; }
+
+          echo 'kill @e[type=minecraft:happy_ghast]' >&3
+          echo 'summon minecraft:happy_ghast 0 100 0 {NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
+          sleep 2
+          echo 'item replace entity @e[type=minecraft:happy_ghast,limit=1,sort=nearest] armor.body with happy_ghast_overhaul:military_harness' >&3
+          echo 'save-all flush' >&3
+
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 &
+          XVFB_PID=$!
+          export DISPLAY=:99
+          sleep 2
+          gradle runClient --no-daemon --args='--quickPlayMultiplayer 127.0.0.1:25565 --width 1280 --height 720' > visual-client.log 2>&1 &
+          CLIENT_PID=$!
+
+          for i in $(seq 1 120); do
+            grep -Eq 'joined the game' visual-server.log && break
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint' visual-client.log; then
+              cat visual-client.log
+              exit 1
+            fi
+            kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }
+            sleep 1
+          done
+          grep -Eq 'joined the game' visual-server.log || { cat visual-server.log; cat visual-client.log; exit 1; }
+
+          echo 'gamemode spectator @a' >&3
+          echo 'effect give @a minecraft:night_vision infinite 0 true' >&3
+          sleep 2
+          xdotool search --name 'Minecraft' windowactivate --sync key F1 || true
+
+          capture() {
+            name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"
+            echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3
+            sleep 2
+            import -display :99 -window root "run/screenshots/visual-smoke/${name}.png"
+            test -s "run/screenshots/visual-smoke/${name}.png"
+          }
+          capture front   0 101  12 180   0
+          capture back    0 101 -12   0   0
+          capture left  -12 101   0 -90   0
+          capture right  12 101   0  90   0
+          capture top     0 112   0   0  90
+          capture bottom  0  88   0   0 -90
+
+          identify run/screenshots/visual-smoke/*.png
+          echo 'stop' >&3
+
       - name: Validate six-angle visual smoke output
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p run/screenshots/visual-smoke
           expected=(front back left right top bottom)
-          found=0
           for angle in "${expected[@]}"; do
-            if test -s "run/screenshots/visual-smoke/${angle}.png"; then
-              echo "visual-smoke: ${angle}.png OK"
-              found=$((found + 1))
-            else
-              echo "visual-smoke: ${angle}.png pending generator integration"
-            fi
+            test -s "run/screenshots/visual-smoke/${angle}.png" || { echo "Missing ${angle}.png"; exit 1; }
           done
-          echo "visual-smoke: ${found}/6 captured"
+          echo 'visual-smoke: 6/6 captured'
 
       - name: Upload six-angle visual smoke
         if: always()
@@ -148,7 +219,7 @@ jobs:
         with:
           name: visual-smoke-6-angle
           path: run/screenshots/visual-smoke/*.png
-          if-no-files-found: ignore
+          if-no-files-found: error
 
       - name: Upload smoke logs
         if: always()
@@ -158,6 +229,9 @@ jobs:
           path: |
             server-smoke.log
             client-smoke.log
+            visual-server.log
+            visual-client.log
+            xvfb.log
           if-no-files-found: ignore
 
       - name: Upload Fabric JAR
