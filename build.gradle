@@ -64,7 +64,12 @@ def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTex
  */
 def generateFinalV2PackedMesh = tasks.register('generateFinalV2PackedMesh') {
     def sourceDir = file('src/main/resources/assets/happy_ghast_overhaul/mesh_sources')
-    inputs.dir(sourceDir).optional()
+    // Use an optional file collection instead of an optional directory property. Gradle 9
+    // validates a missing directory before task execution even when inputs.dir(...).optional()
+    // is used; matching files are genuinely empty until the FINAL v2 payload is committed.
+    inputs.files(fileTree(sourceDir) {
+        include 'military_harness_final_v2.hgv2.gz.b64.part*'
+    })
     outputs.dir(generatedFinalV2MeshResources)
 
     doLast {
