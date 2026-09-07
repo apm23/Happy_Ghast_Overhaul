@@ -58,12 +58,12 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
             if (!visualSmokeConnectAttempted
                     && !VISUAL_SMOKE_SERVER.isEmpty()
                     && client.level == null
-                    && client.screen != null) {
+                    && client.gui.screen() != null) {
                 visualSmokeConnectAttempted = true;
-                HappyGhastOverhaul.LOGGER.info("Visual smoke auto-connect: {}", VISUAL_SMOKE_SERVER);
+                System.out.println("[HappyGhastOverhaul] Visual smoke auto-connect: " + VISUAL_SMOKE_SERVER);
                 ServerAddress address = ServerAddress.parseString(VISUAL_SMOKE_SERVER);
                 ServerData data = new ServerData("Happy Ghast Visual Smoke", VISUAL_SMOKE_SERVER, ServerData.Type.OTHER);
-                ConnectScreen.startConnecting(client.screen, client, address, data, false, null);
+                ConnectScreen.startConnecting(client.gui.screen(), client, address, data, false, null);
                 return;
             }
 
