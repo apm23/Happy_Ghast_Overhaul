@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
-/** Shared 3D geometry with dedicated faction textures and amethyst emissive pass. */
+/** Shared 3D geometry with dedicated faction base + emissive textures. */
 public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
     private static final Identifier SENTINEL_TEXTURE = Identifier.fromNamespaceAndPath(
             HappyGhastOverhaul.MOD_ID,
@@ -21,19 +21,22 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
             HappyGhastOverhaul.MOD_ID,
             "textures/entity/military_harness/military_harness_reaper.png"
     );
-    private static final Identifier EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
+    private static final Identifier SENTINEL_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
             HappyGhastOverhaul.MOD_ID,
-            "textures/entity/military_harness/military_harness_emissive.png"
+            "textures/entity/military_harness/military_harness_sentinel_emissive.png"
+    );
+    private static final Identifier REAPER_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
+            HappyGhastOverhaul.MOD_ID,
+            "textures/entity/military_harness/military_harness_reaper_emissive.png"
     );
     private static final int WHITE = 0xFFFFFFFF;
     private static final int FULL_BRIGHT = 0x00F000F0;
 
     /*
-     * Adult Happy Ghast body is 64 model pixels (4 blocks) wide/high/deep.
-     * MilitaryHarnessVisualModel is authored in vanilla Java model-pixel coordinates and its
-     * shell spans roughly 26.5 px including side pods. Do NOT globally scale this assembly:
-     * doing so also magnifies the deck/banner/antennae and is the reason build #93 exploded.
-     * The geometry itself is fitted to the 64 px adult body instead.
+     * FINAL v2 integration rule:
+     * Sentinel and Reaper keep identical geometry/UV. Faction differences are texture-only.
+     * The existing ModelPart renderer remains the compile-safe fallback until the UV-mesh
+     * submitter is wired in; do not mutate geometry here to imitate the FINAL v2 GLB.
      */
     private final MilitaryHarnessVisualModel model;
 
@@ -51,6 +54,7 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
 
         boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
         Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
+        Identifier emissiveTexture = reaper ? REAPER_EMISSIVE_TEXTURE : SENTINEL_EMISSIVE_TEXTURE;
 
         poseStack.pushPose();
 
@@ -69,7 +73,7 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
                 this.model,
                 state,
                 poseStack,
-                this.model.renderType(EMISSIVE_TEXTURE),
+                this.model.renderType(emissiveTexture),
                 FULL_BRIGHT,
                 OverlayTexture.NO_OVERLAY,
                 WHITE,
