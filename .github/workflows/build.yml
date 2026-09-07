@@ -158,20 +158,11 @@ jobs:
           done
           grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log || { cat visual-server.log; exit 1; }
 
-          echo 'forceload add 0 0' >&3
-          echo 'kill @e[type=minecraft:happy_ghast]' >&3
-          echo 'summon minecraft:happy_ghast 0 100 0 {NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
-          sleep 2
-          echo 'execute as @e[type=minecraft:happy_ghast,limit=1] run item replace entity @s armor.body with happy_ghast_overhaul:military_harness' >&3
-          echo 'data get entity @e[type=minecraft:happy_ghast,limit=1] Pos' >&3
-          echo 'save-all flush' >&3
-          sleep 2
-
           Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 &
           XVFB_PID=$!
           export DISPLAY=:99
           sleep 2
-          gradle runClient --no-daemon --args='--quickPlayMultiplayer=127.0.0.1:25565 --width=1280 --height=720' > visual-client.log 2>&1 &
+          gradle runClient --no-daemon --args='--quickPlayMultiplayer 127.0.0.1:25565' > visual-client.log 2>&1 &
           CLIENT_PID=$!
 
           for i in $(seq 1 150); do
@@ -185,9 +176,16 @@ jobs:
           done
           grep -Eq 'joined the game' visual-server.log || { cat visual-server.log; cat visual-client.log; exit 1; }
 
+          echo 'forceload add 0 0' >&3
+          echo 'tp @a 0 101 12 180 0' >&3
+          echo 'kill @e[tag=visual_smoke_target]' >&3
+          echo 'summon minecraft:happy_ghast 0 100 0 {Tags:["visual_smoke_target"],NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
+          sleep 2
+          echo 'item replace entity @e[tag=visual_smoke_target,limit=1] armor.body with happy_ghast_overhaul:military_harness' >&3
+          echo 'data get entity @e[tag=visual_smoke_target,limit=1] Pos' >&3
           echo 'gamemode spectator @a' >&3
           echo 'effect give @a minecraft:night_vision infinite 0 true' >&3
-          sleep 2
+          sleep 3
           xdotool search --name 'Minecraft' windowactivate --sync key F1 || true
 
           capture() {
