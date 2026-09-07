@@ -10,6 +10,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.ConnectScreen;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.animal.happyghast.HappyGhast;
@@ -19,10 +22,12 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
             Identifier.fromNamespaceAndPath(HappyGhastOverhaul.MOD_ID, "controls")
     );
+    private static final String VISUAL_SMOKE_SERVER = System.getProperty("happyGhastVisualSmokeServer", "").trim();
 
     private static KeyMapping ascend;
     private static KeyMapping descend;
     private static KeyMapping cycleSpeed;
+    private static boolean visualSmokeConnectAttempted;
 
     @Override
     public void onInitializeClient() {
@@ -50,6 +55,18 @@ public final class MilitaryHarnessClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (!visualSmokeConnectAttempted
+                    && !VISUAL_SMOKE_SERVER.isEmpty()
+                    && client.level == null
+                    && client.screen != null) {
+                visualSmokeConnectAttempted = true;
+                HappyGhastOverhaul.LOGGER.info("Visual smoke auto-connect: {}", VISUAL_SMOKE_SERVER);
+                ServerAddress address = ServerAddress.parseString(VISUAL_SMOKE_SERVER);
+                ServerData data = new ServerData("Happy Ghast Visual Smoke", VISUAL_SMOKE_SERVER, ServerData.Type.OTHER);
+                ConnectScreen.startConnecting(client.screen, client, address, data, false, null);
+                return;
+            }
+
             boolean validPilot = client.player != null
                     && client.player.getVehicle() instanceof HappyGhast ghast
                     && ghast.getControllingPassenger() == client.player
