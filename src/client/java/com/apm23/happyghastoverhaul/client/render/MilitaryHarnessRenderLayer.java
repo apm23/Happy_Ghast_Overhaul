@@ -3,11 +3,11 @@ package com.apm23.happyghastoverhaul.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.minecraft.client.model.animal.ghast.HappyGhastModel;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.HappyGhastRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
@@ -41,12 +41,12 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
             FinalV2PackedMesh mesh = finalMesh.get();
             collector.submitCustomGeometry(
                     poseStack,
-                    RenderType.entityCutoutNoCull(baseTexture),
+                    RenderTypes.entityCutout(baseTexture),
                     (pose, consumer) -> mesh.render(pose, consumer, packedLight)
             );
             collector.submitCustomGeometry(
                     poseStack,
-                    RenderType.entityCutoutNoCull(emissiveTexture),
+                    RenderTypes.eyes(emissiveTexture),
                     (pose, consumer) -> mesh.render(pose, consumer, FULL_BRIGHT)
             );
         } else {
