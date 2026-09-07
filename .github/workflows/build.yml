@@ -81,7 +81,7 @@ jobs:
           cat client-smoke.log; exit 1
 
       - name: Install visual smoke capture tools
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xdotool imagemagick
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xdotool imagemagick x11-utils
 
       - name: Capture real six-angle visual smoke
         shell: bash
