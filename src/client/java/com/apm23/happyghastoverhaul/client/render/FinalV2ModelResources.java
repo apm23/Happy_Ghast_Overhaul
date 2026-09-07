@@ -11,9 +11,16 @@ import net.minecraft.resources.Identifier;
  * from silently drifting back to separate geometry paths.
  */
 public final class FinalV2ModelResources {
+    /** Authoring/Blender source artifact path. */
     public static final Identifier SHARED_GEOMETRY = Identifier.fromNamespaceAndPath(
             HappyGhastOverhaul.MOD_ID,
             "models/entity/military_harness/final_v2/military_harness_final_v2.glb"
+    );
+
+    /** Runtime-expanded triangle transport generated from SHARED_GEOMETRY. */
+    public static final Identifier PACKED_GEOMETRY = Identifier.fromNamespaceAndPath(
+            HappyGhastOverhaul.MOD_ID,
+            "models/entity/military_harness/final_v2/military_harness_final_v2.hgv2"
     );
 
     public static final Identifier SENTINEL_BASE = Identifier.fromNamespaceAndPath(
