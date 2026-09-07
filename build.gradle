@@ -57,31 +57,34 @@ def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTex
     }
 }
 
-/*
- * FINAL v2 authoring stays GLB/PNG. Runtime geometry is a deterministic packed triangle
- * stream generated from that exact GLB, gzip+base64-split only so Git text transport can
- * carry the large asset without changing geometry or UVs.
- */
 def generateFinalV2PackedMesh = tasks.register('generateFinalV2PackedMesh') {
     def sourceDir = file('src/main/resources/assets/happy_ghast_overhaul/mesh_sources')
-    // Use an optional file collection instead of an optional directory property. Gradle 9
-    // validates a missing directory before task execution even when inputs.dir(...).optional()
-    // is used; matching files are genuinely empty until the FINAL v2 payload is committed.
     inputs.files(fileTree(sourceDir) {
+        include 'military_harness_final_v2.hgv2.gz'
         include 'military_harness_final_v2.hgv2.gz.b64.part*'
     })
     outputs.dir(generatedFinalV2MeshResources)
 
     doLast {
-        def parts = sourceDir.exists()
-                ? sourceDir.listFiles().findAll { it.name.startsWith('military_harness_final_v2.hgv2.gz.b64.part') }.sort { it.name }
-                : []
-        if (parts.isEmpty()) {
+        if (!sourceDir.exists()) {
             return
         }
 
-        String encoded = parts.collect { it.text.replaceAll('\\s+', '') }.join('')
-        byte[] compressed = java.util.Base64.decoder.decode(encoded)
+        byte[] compressed
+        def directGzip = new File(sourceDir, 'military_harness_final_v2.hgv2.gz')
+        if (directGzip.isFile()) {
+            compressed = directGzip.bytes
+        } else {
+            def parts = sourceDir.listFiles()
+                    .findAll { it.name.startsWith('military_harness_final_v2.hgv2.gz.b64.part') }
+                    .sort { it.name }
+            if (parts.isEmpty()) {
+                return
+            }
+            String encoded = parts.collect { it.text.replaceAll('\\s+', '') }.join('')
+            compressed = java.util.Base64.decoder.decode(encoded)
+        }
+
         byte[] unpacked
         new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(compressed)).withCloseable { input ->
             unpacked = input.readAllBytes()
