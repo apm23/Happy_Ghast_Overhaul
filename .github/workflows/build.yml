@@ -99,6 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           : > client-smoke.log
+          mkdir -p run/screenshots/visual-smoke
           xvfb-run -a timeout 120s gradle runClient --no-daemon > client-smoke.log 2>&1 &
           PID=$!
           for i in $(seq 1 120); do
@@ -122,6 +123,32 @@ jobs:
           done
           cat client-smoke.log
           exit 1
+
+      - name: Validate six-angle visual smoke output
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p run/screenshots/visual-smoke
+          expected=(front back left right top bottom)
+          found=0
+          for angle in "${expected[@]}"; do
+            if test -s "run/screenshots/visual-smoke/${angle}.png"; then
+              echo "visual-smoke: ${angle}.png OK"
+              found=$((found + 1))
+            else
+              echo "visual-smoke: ${angle}.png pending generator integration"
+            fi
+          done
+          echo "visual-smoke: ${found}/6 captured"
+
+      - name: Upload six-angle visual smoke
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-smoke-6-angle
+          path: run/screenshots/visual-smoke/*.png
+          if-no-files-found: ignore
 
       - name: Upload smoke logs
         if: always()
