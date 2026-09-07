@@ -57,7 +57,7 @@ jobs:
           done
           cat client-smoke.log; exit 1
       - name: Install visual smoke capture tools
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xdotool imagemagick x11-utils
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick x11-utils
       - name: Capture real six-angle visual smoke
         shell: bash
         run: |
@@ -93,9 +93,9 @@ jobs:
           xdpyinfo -display "$DISPLAY" >/dev/null
           JAVA_TOOL_OPTIONS='-DhappyGhastVisualSmokeServer=127.0.0.1:25565' gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
           for i in $(seq 1 180); do grep -Eq 'joined the game' visual-server.log && break; if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Connection refused' visual-client.log; then cat visual-client.log; exit 1; fi; kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }; sleep 1; done
-          grep -Eq 'joined the game' visual-server.log || { import -display "$DISPLAY" -window root run/screenshots/visual-smoke/join-failure.png || true; cat visual-server.log; cat visual-client.log; exit 1; }
+          grep -Eq 'joined the game' visual-server.log || { cat visual-server.log; cat visual-client.log; exit 1; }
           echo 'forceload add 0 0' >&3
-          echo 'tp @a 0 101 12 180 0' >&3
+          echo 'tp @a 0 120 20 180 25' >&3
           echo 'kill @e[tag=visual_smoke_target]' >&3
           echo 'summon minecraft:happy_ghast 0 100 0 {Tags:["visual_smoke_target"],NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
           sleep 2
@@ -103,9 +103,19 @@ jobs:
           echo 'gamemode spectator @a' >&3
           echo 'effect give @a minecraft:night_vision infinite 0 true' >&3
           sleep 3
-          WIN="$(xdotool search --name 'Minecraft' 2>/dev/null | tail -n1 || true)"
-          if test -n "$WIN"; then xdotool key --window "$WIN" F1 || true; fi
-          capture() { name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"; echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3; sleep 2; import -display "$DISPLAY" -window root "run/screenshots/visual-smoke/${name}.png"; test -s "run/screenshots/visual-smoke/${name}.png"; }
+          capture() {
+            name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"
+            rm -f "run/screenshots/visual-smoke/${name}.png"
+            echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3
+            for i in $(seq 1 45); do
+              test -s "run/screenshots/visual-smoke/${name}.png" && return 0
+              kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; return 1; }
+              sleep 1
+            done
+            echo "Timed out waiting for framebuffer capture: ${name}"
+            tail -n 200 visual-client.log
+            return 1
+          }
           capture front 0 101 12 180 0
           capture back 0 101 -12 0 0
           capture left -12 101 0 -90 0
@@ -119,8 +129,14 @@ jobs:
         run: |
           set -euo pipefail
           expected=(front back left right top bottom)
-          for angle in "${expected[@]}"; do test -s "run/screenshots/visual-smoke/${angle}.png" || { echo "Missing ${angle}.png"; exit 1; }; done
-          echo 'visual-smoke: 6/6 captured'
+          for angle in "${expected[@]}"; do
+            file="run/screenshots/visual-smoke/${angle}.png"
+            test -s "$file" || { echo "Missing ${angle}.png"; exit 1; }
+            mean="$(convert "$file" -colorspace Gray -format '%[fx:mean]' info:)"
+            awk -v v="$mean" 'BEGIN { if (v <= 0.005) exit 1; }' || { echo "Black/empty framebuffer: ${angle}.png mean=${mean}"; exit 1; }
+            echo "${angle}.png mean=${mean}"
+          done
+          echo 'visual-smoke: 6/6 non-black framebuffer captures'
       - name: Upload six-angle visual smoke
         if: always()
         uses: actions/upload-artifact@v4
