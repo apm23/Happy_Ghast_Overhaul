@@ -1,6 +1,5 @@
 package com.apm23.happyghastoverhaul.client.render;
 
-import com.apm23.happyghastoverhaul.HappyGhastOverhaul;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
 import net.minecraft.client.model.animal.ghast.HappyGhastModel;
@@ -13,22 +12,6 @@ import net.minecraft.resources.Identifier;
 
 /** Shared 3D geometry with dedicated faction base + emissive textures. */
 public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRenderState, HappyGhastModel> {
-    private static final Identifier SENTINEL_TEXTURE = Identifier.fromNamespaceAndPath(
-            HappyGhastOverhaul.MOD_ID,
-            "textures/entity/military_harness/military_harness_sentinel.png"
-    );
-    private static final Identifier REAPER_TEXTURE = Identifier.fromNamespaceAndPath(
-            HappyGhastOverhaul.MOD_ID,
-            "textures/entity/military_harness/military_harness_reaper.png"
-    );
-    private static final Identifier SENTINEL_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
-            HappyGhastOverhaul.MOD_ID,
-            "textures/entity/military_harness/military_harness_sentinel_emissive.png"
-    );
-    private static final Identifier REAPER_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath(
-            HappyGhastOverhaul.MOD_ID,
-            "textures/entity/military_harness/military_harness_reaper_emissive.png"
-    );
     private static final int WHITE = 0xFFFFFFFF;
     private static final int FULL_BRIGHT = 0x00F000F0;
 
@@ -53,8 +36,8 @@ public final class MilitaryHarnessRenderLayer extends RenderLayer<HappyGhastRend
         }
 
         boolean reaper = fabricState.getDataOrDefault(MilitaryHarnessRenderData.REAPER, false);
-        Identifier baseTexture = reaper ? REAPER_TEXTURE : SENTINEL_TEXTURE;
-        Identifier emissiveTexture = reaper ? REAPER_EMISSIVE_TEXTURE : SENTINEL_EMISSIVE_TEXTURE;
+        Identifier baseTexture = FinalV2ModelResources.baseTexture(reaper);
+        Identifier emissiveTexture = FinalV2ModelResources.emissiveTexture(reaper);
 
         poseStack.pushPose();
 
