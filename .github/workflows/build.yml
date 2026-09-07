@@ -132,10 +132,12 @@ jobs:
           level-name=visual-smoke-world
           gamemode=creative
           difficulty=peaceful
+          pause-when-empty-seconds=-1
           EOF
 
           : > visual-server.log
           : > visual-client.log
+          rm -f visual-server.in
           mkfifo visual-server.in
           exec 3<>visual-server.in
           gradle runServer --no-daemon --args='nogui' <&3 > visual-server.log 2>&1 &
@@ -156,22 +158,25 @@ jobs:
           done
           grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log || { cat visual-server.log; exit 1; }
 
+          echo 'forceload add 0 0' >&3
           echo 'kill @e[type=minecraft:happy_ghast]' >&3
           echo 'summon minecraft:happy_ghast 0 100 0 {NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
           sleep 2
-          echo 'item replace entity @e[type=minecraft:happy_ghast,limit=1,sort=nearest] armor.body with happy_ghast_overhaul:military_harness' >&3
+          echo 'execute as @e[type=minecraft:happy_ghast,limit=1] run item replace entity @s armor.body with happy_ghast_overhaul:military_harness' >&3
+          echo 'data get entity @e[type=minecraft:happy_ghast,limit=1] Pos' >&3
           echo 'save-all flush' >&3
+          sleep 2
 
           Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 &
           XVFB_PID=$!
           export DISPLAY=:99
           sleep 2
-          gradle runClient --no-daemon --args='--quickPlayMultiplayer 127.0.0.1:25565 --width 1280 --height 720' > visual-client.log 2>&1 &
+          gradle runClient --no-daemon --args='--quickPlayMultiplayer=127.0.0.1:25565 --width=1280 --height=720' > visual-client.log 2>&1 &
           CLIENT_PID=$!
 
-          for i in $(seq 1 120); do
+          for i in $(seq 1 150); do
             grep -Eq 'joined the game' visual-server.log && break
-            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint' visual-client.log; then
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Failed to connect|Connection refused' visual-client.log; then
               cat visual-client.log
               exit 1
             fi
