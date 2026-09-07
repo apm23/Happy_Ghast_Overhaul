@@ -32,8 +32,10 @@ dependencies {
 }
 
 def generatedMilitaryHarnessResources = layout.buildDirectory.dir('generated/militaryHarnessResources')
+def generatedFinalV2MeshResources = layout.buildDirectory.dir('generated/finalV2MeshResources')
 
 sourceSets.main.resources.srcDir(generatedMilitaryHarnessResources)
+sourceSets.main.resources.srcDir(generatedFinalV2MeshResources)
 
 def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTextures') {
     inputs.dir('src/main/resources/assets/happy_ghast_overhaul/texture_sources')
@@ -55,17 +57,51 @@ def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTex
     }
 }
 
+/*
+ * FINAL v2 authoring stays GLB/PNG. Runtime geometry is a deterministic packed triangle
+ * stream generated from that exact GLB, gzip+base64-split only so Git text transport can
+ * carry the large asset without changing geometry or UVs.
+ */
+def generateFinalV2PackedMesh = tasks.register('generateFinalV2PackedMesh') {
+    def sourceDir = file('src/main/resources/assets/happy_ghast_overhaul/mesh_sources')
+    inputs.dir(sourceDir).optional()
+    outputs.dir(generatedFinalV2MeshResources)
+
+    doLast {
+        def parts = sourceDir.exists()
+                ? sourceDir.listFiles().findAll { it.name.startsWith('military_harness_final_v2.hgv2.gz.b64.part') }.sort { it.name }
+                : []
+        if (parts.isEmpty()) {
+            return
+        }
+
+        String encoded = parts.collect { it.text.replaceAll('\\s+', '') }.join('')
+        byte[] compressed = java.util.Base64.decoder.decode(encoded)
+        byte[] unpacked
+        new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(compressed)).withCloseable { input ->
+            unpacked = input.readAllBytes()
+        }
+
+        def outputDir = generatedFinalV2MeshResources.get().dir('assets/happy_ghast_overhaul/models/entity/military_harness/final_v2').asFile
+        outputDir.mkdirs()
+        new File(outputDir, 'military_harness_final_v2.hgv2').bytes = unpacked
+    }
+}
+
 processResources {
     dependsOn generateMilitaryHarnessTextures
+    dependsOn generateFinalV2PackedMesh
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }
     exclude 'assets/happy_ghast_overhaul/texture_sources/**'
+    exclude 'assets/happy_ghast_overhaul/mesh_sources/**'
 }
 
 tasks.matching { it.name == 'sourcesJar' }.configureEach {
     dependsOn generateMilitaryHarnessTextures
+    dependsOn generateFinalV2PackedMesh
 }
 
 tasks.withType(JavaCompile).configureEach {
