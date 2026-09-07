@@ -52,14 +52,8 @@ jobs:
           for path in "${required[@]}"; do
             grep -Fxq "$path" jar-contents.txt || { echo "Missing from JAR: $path"; exit 1; }
           done
-          if grep -Fq 'assets/happy_ghast_overhaul/texture_sources/' jar-contents.txt; then
-            echo 'Raw texture sources must not be packaged.'
-            exit 1
-          fi
-          if grep -Fq 'assets/happy_ghast_overhaul/mesh_sources/' jar-contents.txt; then
-            echo 'Raw mesh sources must not be packaged.'
-            exit 1
-          fi
+          if grep -Fq 'assets/happy_ghast_overhaul/texture_sources/' jar-contents.txt; then echo 'Raw texture sources must not be packaged.'; exit 1; fi
+          if grep -Fq 'assets/happy_ghast_overhaul/mesh_sources/' jar-contents.txt; then echo 'Raw mesh sources must not be packaged.'; exit 1; fi
 
       - name: Dedicated Fabric server smoke
         shell: bash
@@ -71,20 +65,11 @@ jobs:
           timeout 120s gradle runServer --no-daemon --args='nogui' > server-smoke.log 2>&1 &
           PID=$!
           for i in $(seq 1 120); do
-            if grep -Eq 'Done \([0-9.]+s\)!|Done \(' server-smoke.log; then
-              echo 'Fabric server reached ready state.'
-              kill "$PID" 2>/dev/null || true
-              wait "$PID" 2>/dev/null || true
-              exit 0
-            fi
-            if ! kill -0 "$PID" 2>/dev/null; then
-              cat server-smoke.log
-              exit 1
-            fi
+            if grep -Eq 'Done \([0-9.]+s\)!|Done \(' server-smoke.log; then kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; exit 0; fi
+            kill -0 "$PID" 2>/dev/null || { cat server-smoke.log; exit 1; }
             sleep 1
           done
-          cat server-smoke.log
-          exit 1
+          cat server-smoke.log; exit 1
 
       - name: Fabric client launch smoke
         shell: bash
@@ -94,26 +79,12 @@ jobs:
           xvfb-run -a timeout 120s gradle runClient --no-daemon > client-smoke.log 2>&1 &
           PID=$!
           for i in $(seq 1 120); do
-            if grep -Eq 'Setting user:|Backend library: LWJGL|OpenAL initialized|Reloading ResourceManager' client-smoke.log; then
-              echo 'Fabric client reached runtime initialization.'
-              kill "$PID" 2>/dev/null || true
-              wait "$PID" 2>/dev/null || true
-              exit 0
-            fi
-            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint' client-smoke.log; then
-              cat client-smoke.log
-              kill "$PID" 2>/dev/null || true
-              wait "$PID" 2>/dev/null || true
-              exit 1
-            fi
-            if ! kill -0 "$PID" 2>/dev/null; then
-              cat client-smoke.log
-              exit 1
-            fi
+            if grep -Eq 'Setting user:|Backend library: LWJGL|OpenAL initialized|Reloading ResourceManager' client-smoke.log; then kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; exit 0; fi
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint' client-smoke.log; then cat client-smoke.log; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; exit 1; fi
+            kill -0 "$PID" 2>/dev/null || { cat client-smoke.log; exit 1; }
             sleep 1
           done
-          cat client-smoke.log
-          exit 1
+          cat client-smoke.log; exit 1
 
       - name: Install visual smoke capture tools
         run: sudo apt-get update -qq && sudo apt-get install -y -qq xdotool imagemagick
@@ -134,47 +105,38 @@ jobs:
           difficulty=peaceful
           pause-when-empty-seconds=-1
           EOF
-
-          : > visual-server.log
-          : > visual-client.log
-          rm -f visual-server.in
-          mkfifo visual-server.in
-          exec 3<>visual-server.in
-          gradle runServer --no-daemon --args='nogui' <&3 > visual-server.log 2>&1 &
-          SERVER_PID=$!
-          XVFB_PID=''
-          CLIENT_PID=''
-          cleanup() {
-            if test -n "${CLIENT_PID}"; then kill "$CLIENT_PID" 2>/dev/null || true; fi
-            if test -n "${SERVER_PID}"; then kill "$SERVER_PID" 2>/dev/null || true; fi
-            if test -n "${XVFB_PID}"; then kill "$XVFB_PID" 2>/dev/null || true; fi
-          }
+          : > visual-server.log; : > visual-client.log
+          rm -f visual-server.in; mkfifo visual-server.in; exec 3<>visual-server.in
+          gradle runServer --no-daemon --args='nogui' <&3 > visual-server.log 2>&1 & SERVER_PID=$!
+          XVFB_PID=''; CLIENT_PID=''
+          cleanup() { test -z "${CLIENT_PID}" || kill "$CLIENT_PID" 2>/dev/null || true; test -z "${SERVER_PID}" || kill "$SERVER_PID" 2>/dev/null || true; test -z "${XVFB_PID}" || kill "$XVFB_PID" 2>/dev/null || true; }
           trap cleanup EXIT
-
-          for i in $(seq 1 120); do
-            grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log && break
-            kill -0 "$SERVER_PID" 2>/dev/null || { cat visual-server.log; exit 1; }
-            sleep 1
-          done
+          for i in $(seq 1 120); do grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log && break; kill -0 "$SERVER_PID" 2>/dev/null || { cat visual-server.log; exit 1; }; sleep 1; done
           grep -Eq 'Done \([0-9.]+s\)!|Done \(' visual-server.log || { cat visual-server.log; exit 1; }
 
-          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 &
-          XVFB_PID=$!
-          export DISPLAY=:99
-          sleep 2
-          gradle runClient --no-daemon --args='--server 127.0.0.1 --port 25565' > visual-client.log 2>&1 &
-          CLIENT_PID=$!
-
-          for i in $(seq 1 150); do
-            grep -Eq 'joined the game' visual-server.log && break
-            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Failed to connect|Connection refused' visual-client.log; then
-              cat visual-client.log
-              exit 1
-            fi
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset > xvfb.log 2>&1 & XVFB_PID=$!
+          export DISPLAY=:99; sleep 2
+          gradle runClient --no-daemon > visual-client.log 2>&1 & CLIENT_PID=$!
+          for i in $(seq 1 120); do
+            xdotool search --name 'Minecraft' >/dev/null 2>&1 && break
             kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }
             sleep 1
           done
-          grep -Eq 'joined the game' visual-server.log || { cat visual-server.log; cat visual-client.log; exit 1; }
+          WIN="$(xdotool search --name 'Minecraft' | tail -n1)"
+          test -n "$WIN" || { cat visual-client.log; exit 1; }
+          xdotool windowactivate --sync "$WIN"; sleep 2
+          # 26.2 ignores legacy --server/--port. Navigate title screen -> Multiplayer -> Direct Connection.
+          xdotool key --window "$WIN" Tab Tab Return; sleep 3
+          xdotool key --window "$WIN" Tab Return; sleep 2
+          xdotool type --window "$WIN" --delay 25 '127.0.0.1:25565'; xdotool key --window "$WIN" Return
+
+          for i in $(seq 1 180); do
+            grep -Eq 'joined the game' visual-server.log && break
+            if grep -Eqi 'Mixin apply failed|MixinTransformerError|Exception in thread "Render thread"|Could not execute entrypoint|Connection refused' visual-client.log; then cat visual-client.log; exit 1; fi
+            kill -0 "$CLIENT_PID" 2>/dev/null || { cat visual-client.log; exit 1; }
+            sleep 1
+          done
+          grep -Eq 'joined the game' visual-server.log || { import -display :99 -window root run/screenshots/visual-smoke/join-failure.png || true; cat visual-server.log; cat visual-client.log; exit 1; }
 
           echo 'forceload add 0 0' >&3
           echo 'tp @a 0 101 12 180 0' >&3
@@ -182,26 +144,17 @@ jobs:
           echo 'summon minecraft:happy_ghast 0 100 0 {Tags:["visual_smoke_target"],NoAI:1b,Invulnerable:1b,PersistenceRequired:1b,Rotation:[180f,0f]}' >&3
           sleep 2
           echo 'item replace entity @e[tag=visual_smoke_target,limit=1] armor.body with happy_ghast_overhaul:military_harness' >&3
-          echo 'data get entity @e[tag=visual_smoke_target,limit=1] Pos' >&3
           echo 'gamemode spectator @a' >&3
           echo 'effect give @a minecraft:night_vision infinite 0 true' >&3
           sleep 3
-          xdotool search --name 'Minecraft' windowactivate --sync key F1 || true
-
-          capture() {
-            name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"
-            echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3
-            sleep 2
-            import -display :99 -window root "run/screenshots/visual-smoke/${name}.png"
-            test -s "run/screenshots/visual-smoke/${name}.png"
-          }
-          capture front   0 101  12 180   0
-          capture back    0 101 -12   0   0
-          capture left  -12 101   0 -90   0
-          capture right  12 101   0  90   0
-          capture top     0 112   0   0  90
-          capture bottom  0  88   0   0 -90
-
+          xdotool windowactivate --sync "$WIN" key F1 || true
+          capture() { name="$1"; x="$2"; y="$3"; z="$4"; yaw="$5"; pitch="$6"; echo "tp @a ${x} ${y} ${z} ${yaw} ${pitch}" >&3; sleep 2; import -display :99 -window root "run/screenshots/visual-smoke/${name}.png"; test -s "run/screenshots/visual-smoke/${name}.png"; }
+          capture front 0 101 12 180 0
+          capture back 0 101 -12 0 0
+          capture left -12 101 0 -90 0
+          capture right 12 101 0 90 0
+          capture top 0 112 0 0 90
+          capture bottom 0 88 0 0 -90
           identify run/screenshots/visual-smoke/*.png
           echo 'stop' >&3
 
@@ -211,9 +164,7 @@ jobs:
         run: |
           set -euo pipefail
           expected=(front back left right top bottom)
-          for angle in "${expected[@]}"; do
-            test -s "run/screenshots/visual-smoke/${angle}.png" || { echo "Missing ${angle}.png"; exit 1; }
-          done
+          for angle in "${expected[@]}"; do test -s "run/screenshots/visual-smoke/${angle}.png" || { echo "Missing ${angle}.png"; exit 1; }; done
           echo 'visual-smoke: 6/6 captured'
 
       - name: Upload six-angle visual smoke
