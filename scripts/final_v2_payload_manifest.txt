@@ -1,0 +1,11 @@
+format=HGV2-v1
+body_vertices=108894
+banner_vertices=48
+raw_bytes=3486160
+raw_sha256=f7f07530f53d1208733ad133134cfeea7e429d1f1c61208aa0e4a7d5df68b02b
+xz_bytes=362268
+xz_sha256=c9932510c990fa266a7e4f0433250535bf21e8683df48fab46c077b99ffd88b9
+base64_chars=483024
+base64_sha256=de3b0be80e6f6588de2854441808e268b82bcb9f8de33f960e6332c354249180
+source=Sentinel_FINAL_v2.glb
+packing=position_xyz,uv,face_normal_xyz little-endian float32
