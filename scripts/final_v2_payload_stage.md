@@ -1,0 +1,1 @@
+Temporary FINAL v2 payload staging uses a GitHub issue during CI recovery. The staging issue comments are concatenated, decoded from Base64/XZ, converted to military_harness_final_v2.hgv2.gz, committed by workflow, then this staging path can be removed.
