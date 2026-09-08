@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.tukaani:xz:1.10'
+    }
+}
+
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
@@ -60,6 +69,7 @@ def generateMilitaryHarnessTextures = tasks.register('generateMilitaryHarnessTex
 def generateFinalV2PackedMesh = tasks.register('generateFinalV2PackedMesh') {
     def sourceDir = file('src/main/resources/assets/happy_ghast_overhaul/mesh_sources')
     inputs.files(fileTree(sourceDir) {
+        include 'military_harness_final_v2.hgv2.xz.b64.part*'
         include 'military_harness_final_v2.hgv2.gz'
         include 'military_harness_final_v2.hgv2.gz.b64.part*'
     })
@@ -70,24 +80,34 @@ def generateFinalV2PackedMesh = tasks.register('generateFinalV2PackedMesh') {
             return
         }
 
-        byte[] compressed
-        def directGzip = new File(sourceDir, 'military_harness_final_v2.hgv2.gz')
-        if (directGzip.isFile()) {
-            compressed = directGzip.bytes
-        } else {
-            def parts = sourceDir.listFiles()
-                    .findAll { it.name.startsWith('military_harness_final_v2.hgv2.gz.b64.part') }
-                    .sort { it.name }
-            if (parts.isEmpty()) {
-                return
-            }
-            String encoded = parts.collect { it.text.replaceAll('\\s+', '') }.join('')
-            compressed = java.util.Base64.decoder.decode(encoded)
-        }
-
         byte[] unpacked
-        new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(compressed)).withCloseable { input ->
-            unpacked = input.readAllBytes()
+        def xzParts = sourceDir.listFiles()
+                .findAll { it.name.startsWith('military_harness_final_v2.hgv2.xz.b64.part') }
+                .sort { it.name }
+        if (!xzParts.isEmpty()) {
+            String encoded = xzParts.collect { it.text.replaceAll('\\s+', '') }.join('')
+            byte[] compressed = java.util.Base64.decoder.decode(encoded)
+            new org.tukaani.xz.XZInputStream(new java.io.ByteArrayInputStream(compressed)).withCloseable { input ->
+                unpacked = input.readAllBytes()
+            }
+        } else {
+            byte[] compressed
+            def directGzip = new File(sourceDir, 'military_harness_final_v2.hgv2.gz')
+            if (directGzip.isFile()) {
+                compressed = directGzip.bytes
+            } else {
+                def parts = sourceDir.listFiles()
+                        .findAll { it.name.startsWith('military_harness_final_v2.hgv2.gz.b64.part') }
+                        .sort { it.name }
+                if (parts.isEmpty()) {
+                    return
+                }
+                String encoded = parts.collect { it.text.replaceAll('\\s+', '') }.join('')
+                compressed = java.util.Base64.decoder.decode(encoded)
+            }
+            new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(compressed)).withCloseable { input ->
+                unpacked = input.readAllBytes()
+            }
         }
 
         def outputDir = generatedFinalV2MeshResources.get().dir('assets/happy_ghast_overhaul/models/entity/military_harness/final_v2').asFile
